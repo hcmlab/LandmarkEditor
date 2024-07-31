@@ -66,6 +66,7 @@ export class App {
       } else {
         this.editor.graph = this.getSelectedFileHistory()?.get();
       }
+      this.editor.center();
     });
   }
 
