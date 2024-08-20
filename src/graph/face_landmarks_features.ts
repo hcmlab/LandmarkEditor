@@ -80,6 +80,23 @@ export const FACE_FEATURE_LIPS = Array.from(
 );
 
 /**
+ * We don't use the exact implementation of mediapipe. we calculate the center point
+ * and ignore the rest. The "UPDATED" arrays contain the center point. The array in FaceLandmarker
+ * remain untouched
+ */
+export const UPDATED_LEFT_IRIS = [
+  FaceLandmarker.FACE_LANDMARKS_RIGHT_IRIS[1],
+] as Connection[];
+// 470
+export const UPDATED_RIGHT_IRIS = [
+  FaceLandmarker.FACE_LANDMARKS_RIGHT_IRIS[0],
+] as Connection[];
+// 469
+
+UPDATED_LEFT_IRIS[0].end = UPDATED_LEFT_IRIS[0].start;
+UPDATED_RIGHT_IRIS[0].end = UPDATED_RIGHT_IRIS[0].start;
+
+/**
  * Array of unique face feature point IDs related to the left eye.
  */
 export const FACE_FEATURE_LEFT_EYE = Array.from(
@@ -87,8 +104,8 @@ export const FACE_FEATURE_LEFT_EYE = Array.from(
     FaceLandmarker.FACE_LANDMARKS_LEFT_EYE.map((con) => con.start)
       .concat(FaceLandmarker.FACE_LANDMARKS_LEFT_EYE.map((con) => con.end))
       .concat(
-        FaceLandmarker.FACE_LANDMARKS_LEFT_IRIS.map((con) => con.start).concat(
-          FaceLandmarker.FACE_LANDMARKS_LEFT_IRIS.map((con) => con.end),
+        UPDATED_LEFT_IRIS.map((con) => con.start).concat(
+          UPDATED_LEFT_IRIS.map((con) => con.end),
         ),
       ),
   ),
@@ -113,8 +130,8 @@ export const FACE_FEATURE_RIGHT_EYE = Array.from(
     FaceLandmarker.FACE_LANDMARKS_RIGHT_EYE.map((con) => con.start)
       .concat(FaceLandmarker.FACE_LANDMARKS_RIGHT_EYE.map((con) => con.end))
       .concat(
-        FaceLandmarker.FACE_LANDMARKS_RIGHT_IRIS.map((con) => con.start).concat(
-          FaceLandmarker.FACE_LANDMARKS_RIGHT_IRIS.map((con) => con.end),
+        UPDATED_RIGHT_IRIS.map((con) => con.start).concat(
+          UPDATED_RIGHT_IRIS.map((con) => con.end),
         ),
       ),
   ),

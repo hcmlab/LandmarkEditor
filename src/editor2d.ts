@@ -5,6 +5,8 @@ import { FaceLandmarker } from '@mediapipe/tasks-vision';
 import {
   Connection,
   FACE_LANDMARKS_NOSE,
+  UPDATED_LEFT_IRIS,
+  UPDATED_RIGHT_IRIS,
 } from './graph/face_landmarks_features';
 
 const COLOR_POINT_HOVERED = 'rgba(255,250,163,0.6)';
@@ -196,10 +198,7 @@ export class Editor2D {
       FaceLandmarker.FACE_LANDMARKS_RIGHT_EYE,
       COLOR_EDGES_RIGHT_EYE,
     );
-    this.drawFaceTrait(
-      FaceLandmarker.FACE_LANDMARKS_RIGHT_IRIS,
-      COLOR_EDGES_RIGHT_IRIS,
-    );
+    this.drawFaceTrait(UPDATED_RIGHT_IRIS, COLOR_EDGES_RIGHT_IRIS);
     this.drawFaceTrait(
       FaceLandmarker.FACE_LANDMARKS_LEFT_EYEBROW,
       COLOR_EDGES_LEFT_EYE,
@@ -208,10 +207,7 @@ export class Editor2D {
       FaceLandmarker.FACE_LANDMARKS_LEFT_EYE,
       COLOR_EDGES_LEFT_EYE,
     );
-    this.drawFaceTrait(
-      FaceLandmarker.FACE_LANDMARKS_LEFT_IRIS,
-      COLOR_EDGES_LEFT_IRIS,
-    );
+    this.drawFaceTrait(UPDATED_LEFT_IRIS, COLOR_EDGES_LEFT_IRIS);
     this.drawFaceTrait(FACE_LANDMARKS_NOSE, COLOR_EDGES_NOSE);
   }
 

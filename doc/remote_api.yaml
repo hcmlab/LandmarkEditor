@@ -36,8 +36,8 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/Point'
-              maxLength: 478
-              minLength: 478
+              maxLength: 472
+              minLength: 472
         sha256:
           type: string
           format: sha256

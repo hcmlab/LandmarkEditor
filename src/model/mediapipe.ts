@@ -1,6 +1,10 @@
 import { ModelApi } from './modelApi';
 import { Graph } from '../graph/graph';
-import { findNeighbourPointIds } from '../graph/face_landmarks_features';
+import {
+  findNeighbourPointIds,
+  UPDATED_LEFT_IRIS,
+  UPDATED_RIGHT_IRIS,
+} from '../graph/face_landmarks_features';
 import { FaceLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
 import { Point2D } from '../graph/point2d';
 import { Point3D } from '../graph/point3d';
@@ -46,6 +50,43 @@ export class MediapipeModel implements ModelApi<Point2D> {
             .map((landmarks) =>
               landmarks
                 .map((dict, idx) => {
+                  // calculate the iris center
+                  if (idx === UPDATED_LEFT_IRIS[0].start) {
+                    const iris = FaceLandmarker.FACE_LANDMARKS_LEFT_IRIS.reduce(
+                      (acc, con) => {
+                        acc.x += landmarks[con.start].x;
+                        acc.y += landmarks[con.start].y;
+                        acc.z += landmarks[con.start].z;
+                        return acc;
+                      },
+                      { x: 0.0, y: 0.0, z: 0.0 },
+                    );
+
+                    const avgFactor =
+                      FaceLandmarker.FACE_LANDMARKS_LEFT_IRIS.length;
+                    dict.x = iris.x / avgFactor;
+                    dict.y = iris.y / avgFactor;
+                    dict.z = iris.z / avgFactor;
+                  }
+                  if (idx === UPDATED_RIGHT_IRIS[0].start) {
+                    const iris =
+                      FaceLandmarker.FACE_LANDMARKS_RIGHT_IRIS.reduce(
+                        (acc, con) => {
+                          acc.x += landmarks[con.start].x;
+                          acc.y += landmarks[con.start].y;
+                          acc.z += landmarks[con.start].z;
+                          return acc;
+                        },
+                        { x: 0.0, y: 0.0, z: 0.0 },
+                      );
+
+                    const avgFactor =
+                      FaceLandmarker.FACE_LANDMARKS_RIGHT_IRIS.length;
+                    dict.x = iris.x / avgFactor;
+                    dict.y = iris.y / avgFactor;
+                    dict.z = iris.z / avgFactor;
+                  }
+
                   const ids = Array.from(
                     findNeighbourPointIds(
                       idx,
@@ -57,7 +98,17 @@ export class MediapipeModel implements ModelApi<Point2D> {
                 })
                 .map((point) => point as Point2D),
             )
-            .map((landmarks) => new Graph(landmarks));
+            .map((landmarks) => {
+              landmarks = landmarks.filter((point) => {
+                return ![
+                  ...FaceLandmarker.FACE_LANDMARKS_LEFT_IRIS.slice(2).map(
+                    (con) => con.start,
+                  ),
+                  ...FaceLandmarker.FACE_LANDMARKS_RIGHT_IRIS,
+                ].includes(point.id);
+              });
+              return new Graph(landmarks);
+            });
           if (graphs) {
             resolve(graphs[0]);
           }
