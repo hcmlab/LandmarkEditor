@@ -101,7 +101,6 @@ export class FileAnnotationHistory<T extends Point2D> {
   }
 
   private get currentHistoryIndex() {
-    console.log('Selected:', this.file.selected);
     switch (this.file.selected) {
       case Orientation.center:
         return this._currentHistoryIndex[0];
@@ -235,9 +234,6 @@ export class FileAnnotationHistory<T extends Point2D> {
    */
   get(): null | Graph<T> {
     if (!this.isEmpty()) {
-      console.log(this._history);
-      console.log(this.currentHistoryIndex);
-      console.log(this._history[this.currentHistoryIndex]);
       return this._history[this.currentHistoryIndex];
     }
     return null;
