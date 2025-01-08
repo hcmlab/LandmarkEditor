@@ -4,6 +4,7 @@ import { Point2D } from '../../graph/point2d';
 import { SaveStatus } from '../../enums/saveStatus';
 import { MultipleViewImage } from '../../interface/multiple_view_image';
 import { FileAnnotationHistory } from '../fileAnnotationHistory';
+import { Orientation } from '../../enums/orientation';
 
 function generateMockedGraph() {
   const x = Math.random() * 100; // Random number between 0 and 100
@@ -24,7 +25,8 @@ const mockData = {
     mesh: []
   },
   left: null,
-  right: null
+  right: null,
+  selected: Orientation.center
 } as MultipleViewImage;
 
 describe('FileAnnotationHistory', () => {
@@ -54,12 +56,12 @@ describe('FileAnnotationHistory', () => {
     const graph = generateMockedGraph();
 
     // state before addition
-    expect(history.isEmpty());
+    expect(history.isEmpty()).toBe(true);
 
     history.add(graph);
 
     // state after addition
-    expect(!history.isEmpty());
+    expect(!history.isEmpty()).toBe(true);
     expect(history.get()).toStrictEqual(graph);
   });
 
@@ -67,6 +69,9 @@ describe('FileAnnotationHistory', () => {
     const history = new FileAnnotationHistory(mockData, 10);
     const graph1 = generateMockedGraph();
     const graph2 = generateMockedGraph();
+
+    expect(graph1).not.toBe(undefined);
+    expect(graph2).not.toBe(undefined);
 
     history.add(graph1);
     history.add(graph2);

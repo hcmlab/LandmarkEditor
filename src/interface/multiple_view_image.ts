@@ -12,6 +12,7 @@ export class MultipleViewImage {
     this.center = null;
     this.right = null;
     this.selected = Orientation.center;
+    console.log('Constructor: ', this.selected);
   }
 
   public get selectedFile(): File | undefined {

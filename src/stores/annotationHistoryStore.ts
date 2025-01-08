@@ -9,6 +9,7 @@ import { Graph } from '@/graph/graph';
 import { MediapipeModel } from '@/model/mediapipe';
 import type { orientationGuessResult } from '@/util/orientationGuesser';
 import type { MultipleViewImage } from '@/interface/multiple_view_image';
+import { Orientation } from '@/enums/orientation';
 
 export const useAnnotationHistoryStore = defineStore({
   id: 'annotationHistory',
@@ -64,6 +65,21 @@ export const useAnnotationHistoryStore = defineStore({
         const graph = MediapipeModel.processResult(mesh);
         if (!graph) return;
         h.add(graph);
+        if (value.left?.mesh) {
+          mesh.faceLandmarks = [value.left?.mesh];
+          const graph = MediapipeModel.processResult(mesh);
+          if (!graph) return;
+          h.file.selected = Orientation.left;
+          h.add(graph);
+        }
+        if (value.right?.mesh) {
+          mesh.faceLandmarks = [value.right?.mesh];
+          const graph = MediapipeModel.processResult(mesh);
+          if (!graph) return;
+          h.file.selected = Orientation.right;
+          h.add(graph);
+        }
+        h.file.selected = Orientation.center;
         this.histories.push(h);
       });
       if (!this.selectedHistory) {

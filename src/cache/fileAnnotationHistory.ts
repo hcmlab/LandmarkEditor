@@ -3,6 +3,7 @@ import { Graph } from '@/graph/graph';
 import { SaveStatus } from '@/enums/saveStatus';
 
 import type { MultipleViewImage } from '@/interface/multiple_view_image';
+import { Orientation } from '@/enums/orientation';
 
 export interface PointData {
   deleted: boolean;
@@ -24,7 +25,7 @@ export interface GraphData {
  */
 export class FileAnnotationHistory<T extends Point2D> {
   private readonly cacheSize: number;
-  private currentHistoryIndex: number = 0;
+  private _currentHistoryIndex: number[] = [0, 0, 0];
   private readonly _file: MultipleViewImage;
 
   /**
@@ -67,10 +68,63 @@ export class FileAnnotationHistory<T extends Point2D> {
     };
   }
 
-  private _history: Graph<T>[] = [];
+  private __history: Graph<T>[][] = [[], [], []];
+
+  private get _history() {
+    switch (this.file.selected) {
+      case Orientation.center:
+        return this.__history[0];
+      case Orientation.left:
+        return this.__history[1];
+      case Orientation.right:
+        return this.__history[2];
+    }
+    return this.__history[0];
+  }
+
+  private set _history(value: Graph<T>[]) {
+    switch (this.file.selected) {
+      case Orientation.center:
+        this.__history[0] = value;
+        break;
+      case Orientation.left:
+        this.__history[1] = value;
+        break;
+      case Orientation.right:
+        this.__history[2] = value;
+        break;
+    }
+  }
 
   protected get history() {
     return this._history;
+  }
+
+  private get currentHistoryIndex() {
+    console.log('Selected:', this.file.selected);
+    switch (this.file.selected) {
+      case Orientation.center:
+        return this._currentHistoryIndex[0];
+      case Orientation.left:
+        return this._currentHistoryIndex[1];
+      case Orientation.right:
+        return this._currentHistoryIndex[2];
+    }
+    return -1;
+  }
+
+  private set currentHistoryIndex(value: number) {
+    switch (this.file.selected) {
+      case Orientation.center:
+        this._currentHistoryIndex[0] = value;
+        break;
+      case Orientation.left:
+        this._currentHistoryIndex[1] = value;
+        break;
+      case Orientation.right:
+        this._currentHistoryIndex[2] = value;
+        break;
+    }
   }
 
   /**
@@ -181,6 +235,9 @@ export class FileAnnotationHistory<T extends Point2D> {
    */
   get(): null | Graph<T> {
     if (!this.isEmpty()) {
+      console.log(this._history);
+      console.log(this.currentHistoryIndex);
+      console.log(this._history[this.currentHistoryIndex]);
       return this._history[this.currentHistoryIndex];
     }
     return null;
