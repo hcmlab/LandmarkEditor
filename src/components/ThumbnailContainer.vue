@@ -2,14 +2,14 @@
 import { computed, onMounted, ref, watch } from 'vue';
 import { SaveStatus } from '@/enums/saveStatus';
 import { FileAnnotationHistory } from '@/cache/fileAnnotationHistory';
-import { Point2D } from '@/graph/point2d';
+import { Point3D } from '@/graph/point3d';
 import { imageFromFile } from '@/util/imageFromFile';
 
 import type { MultipleViewImage } from '@/interface/multiple_view_image';
 
 const props = defineProps({
   history: {
-    type: FileAnnotationHistory<Point2D>,
+    type: FileAnnotationHistory<Point3D>,
     required: true
   },
   imageSize: {

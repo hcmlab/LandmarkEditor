@@ -250,31 +250,28 @@ export class FileAnnotationHistory<T extends Point2D> {
   public updateFromMatrix(matrix: Matrix, points: T[]) {
     points.forEach((point) => {
       /** movement of the point to modify in arbitrary common space */
-      let abs_point = math.multiply(matrix, point.matrix);
-      abs_point = math.divide(abs_point, abs_point.get([3])) as Matrix<MathNumericType>;
+      let abs_move = math.multiply(matrix, point.matrix);
+      abs_move = math.divide(abs_move, abs_move.get([3])) as Matrix<MathNumericType>;
 
       const orientation = this.file.selected;
 
       // if a perspective wasn't manually updated, update it.
       if (orientation !== Orientation.left && this.file.left) {
-        const file = this.file.left;
         /** inverse matrix from arbitrary common space to left image space */
-        const inv_matrix = reverse(file.transformationMatrix);
-        this.updatePerspectiveFromMatrix(point.id, abs_point, inv_matrix, Orientation.left);
+        const inv_matrix = reverse(this.file.left.transformationMatrix);
+        this.updatePerspectiveFromMatrix(point.id, abs_move, inv_matrix, Orientation.left);
       }
 
       if (orientation !== Orientation.center && this.file.center) {
-        const file = this.file.center;
         /** inverse matrix from arbitrary common space to center image space. */
-        const inv_matrix = reverse(file.transformationMatrix);
-        this.updatePerspectiveFromMatrix(point.id, abs_point, inv_matrix, Orientation.center);
+        const inv_matrix = reverse(this.file.center.transformationMatrix);
+        this.updatePerspectiveFromMatrix(point.id, abs_move, inv_matrix, Orientation.center);
       }
 
       if (orientation !== Orientation.right && this.file.right) {
         /** inverse matrix from arbitrary common space to right image space */
-        const file = this.file.right;
-        const inv_matrix = reverse(file.transformationMatrix);
-        this.updatePerspectiveFromMatrix(point.id, abs_point, inv_matrix, Orientation.right);
+        const inv_matrix = reverse(this.file.right.transformationMatrix);
+        this.updatePerspectiveFromMatrix(point.id, abs_move, inv_matrix, Orientation.right);
       }
     });
   }

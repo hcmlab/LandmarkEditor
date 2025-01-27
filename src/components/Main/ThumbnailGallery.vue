@@ -4,7 +4,7 @@ import { useAnnotationHistoryStore } from '@/stores/annotationHistoryStore';
 import ThumbnailContainer from '@/components/ThumbnailContainer.vue';
 import { SaveStatus } from '@/enums/saveStatus';
 import { FileAnnotationHistory } from '@/cache/fileAnnotationHistory';
-import { Point2D } from '@/graph/point2d';
+import { Point3D } from '@/graph/point3d';
 import { useModelStore } from '@/stores/modelStore';
 import type { MultipleViewImage } from '@/interface/multiple_view_image';
 
@@ -54,7 +54,7 @@ function selectThumbnail(file: MultipleViewImage): void {
       <div v-for="(history, idx) in histories" :key="idx" class="pb-1">
         <ThumbnailContainer
           :id="'thumbnail-' + idx"
-          :history="history as FileAnnotationHistory<Point2D>"
+          :history="history as FileAnnotationHistory<Point3D>"
           @click="selectThumbnail"
         />
       </div>
