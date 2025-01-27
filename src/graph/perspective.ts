@@ -70,8 +70,13 @@ export class Perspective {
    */
   static relativeToAbsolute<P extends Point2D>(image_dim: ImageDimension, point: P): P {
     const copy = point.clone();
-    copy.x = point.x * image_dim.width;
-    copy.y = point.y * image_dim.height;
+    const absolute = new Point2D(
+      point.id,
+      point.x * image_dim.width,
+      point.y * image_dim.height,
+      []
+    );
+    copy.moveTo(absolute);
     return copy as P;
   }
 
@@ -83,8 +88,13 @@ export class Perspective {
    */
   static absoluteToRelative<P extends Point2D>(image_dim: ImageDimension, point: P): P {
     const copy = point.clone();
-    copy.x = point.x / image_dim.width;
-    copy.y = point.y / image_dim.height;
+    const relative = new Point2D(
+      point.id,
+      point.x / image_dim.width,
+      point.y / image_dim.height,
+      []
+    );
+    copy.moveTo(relative);
     return copy as P;
   }
 }

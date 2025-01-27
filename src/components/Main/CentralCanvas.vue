@@ -41,10 +41,10 @@ watch(
     added.forEach((tool) => {
       editors.value.push(fromTool(tool));
     });
-    Editor.draw();
     editors.value.forEach((editor) => {
       editor.onBackgroundLoaded();
     });
+    Editor.draw();
   },
   { deep: true }
 );
@@ -75,13 +75,11 @@ function handleMouseMove(event: MouseEvent): void {
   const relativeMouseY = (Editor.mouseY - Editor.offsetY) / Editor.zoomScale;
   if (Editor.isMoving) {
     canvas.value.style.cursor = 'pointer';
-    Editor.draw();
     editors.value.forEach((editor) => {
       editor.onMove(relativeMouseX, relativeMouseY);
     });
   } else if (Editor.isPanning) {
     Editor.pan(Editor.mouseX - Editor.prevMouseX, Editor.mouseY - Editor.prevMouseY);
-    Editor.draw();
     editors.value.forEach((editor) => {
       editor.onPan(relativeMouseX, relativeMouseY);
     });
@@ -89,6 +87,7 @@ function handleMouseMove(event: MouseEvent): void {
   editors.value.forEach((editor) => {
     editor.onMouseMove(event, relativeMouseX, relativeMouseY);
   });
+  Editor.draw();
 }
 
 function handleMouseUp(e: MouseEvent): void {
@@ -106,14 +105,17 @@ function handleMouseUp(e: MouseEvent): void {
   editors.value.forEach((editor) => {
     editor.onMouseUp(e);
   });
+  Editor.draw();
 }
 
 function handleWheel(event: WheelEvent): void {
-  if (Editor.hasImage && !event.shiftKey) {
-    Editor.zoom(event.deltaY > 0);
-    Editor.draw();
-    event.preventDefault();
+  if (!Editor.hasImage || event.shiftKey) {
+    return;
   }
+
+  Editor.zoom(event.deltaY > 0);
+  Editor.draw();
+  event.preventDefault();
 }
 
 const onResize = () => {

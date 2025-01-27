@@ -248,31 +248,28 @@ export class FileAnnotationHistory<T extends Point2D> {
    * @param points - The array of movement to update in other images. Already update in the source image.
    */
   public updateFromMatrix(matrix: Matrix, points: T[]) {
+    const orientation = this.file.selected;
+    const inv_matrices: { [key in Orientation]?: Matrix } = {};
+
+    if (orientation !== Orientation.left && this.file.left) {
+      inv_matrices[Orientation.left] = reverse(this.file.left.transformationMatrix);
+    }
+    if (orientation !== Orientation.center && this.file.center) {
+      inv_matrices[Orientation.center] = reverse(this.file.center.transformationMatrix);
+    }
+    if (orientation !== Orientation.right && this.file.right) {
+      inv_matrices[Orientation.right] = reverse(this.file.right.transformationMatrix);
+    }
+
     points.forEach((point) => {
-      /** movement of the point to modify in arbitrary common space */
       let abs_move = math.multiply(matrix, point.matrix);
       abs_move = math.divide(abs_move, abs_move.get([3])) as Matrix<MathNumericType>;
 
-      const orientation = this.file.selected;
-
-      // if a perspective wasn't manually updated, update it.
-      if (orientation !== Orientation.left && this.file.left) {
-        /** inverse matrix from arbitrary common space to left image space */
-        const inv_matrix = reverse(this.file.left.transformationMatrix);
-        this.updatePerspectiveFromMatrix(point.id, abs_move, inv_matrix, Orientation.left);
-      }
-
-      if (orientation !== Orientation.center && this.file.center) {
-        /** inverse matrix from arbitrary common space to center image space. */
-        const inv_matrix = reverse(this.file.center.transformationMatrix);
-        this.updatePerspectiveFromMatrix(point.id, abs_move, inv_matrix, Orientation.center);
-      }
-
-      if (orientation !== Orientation.right && this.file.right) {
-        /** inverse matrix from arbitrary common space to right image space */
-        const inv_matrix = reverse(this.file.right.transformationMatrix);
-        this.updatePerspectiveFromMatrix(point.id, abs_move, inv_matrix, Orientation.right);
-      }
+      Object.entries(inv_matrices).forEach(([orient, inv_matrix]) => {
+        if (inv_matrix) {
+          this.updatePerspectiveFromMatrix(point.id, abs_move, inv_matrix, orient as Orientation);
+        }
+      });
     });
   }
 
@@ -295,16 +292,15 @@ export class FileAnnotationHistory<T extends Point2D> {
 
     if (!other) {
       console.error(
-        `Couldn't find corresponding point in other perspective (orientation: ${orientation})`
+        `Couldn't find corresponding point (id=${point_id}) in other perspective (orientation: ${orientation})`
       );
       return;
     }
+
     let move = math.multiply(matrix, abs_move);
     move = math.divide(move, move.get([3])) as Matrix<MathNumericType>;
     const move_pt = other.clone() as T;
     move_pt.matrix = move;
-    const clone = other.clone();
-    clone.add(move_pt);
-    other.moveTo(clone);
+    other.add(move_pt);
   }
 }

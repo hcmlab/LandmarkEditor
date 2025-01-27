@@ -1,6 +1,6 @@
 export enum Orientation {
-  center,
-  left,
-  right,
-  unknown
+  center = 'center',
+  left = 'left',
+  right = 'right',
+  unknown = 'unknown'
 }

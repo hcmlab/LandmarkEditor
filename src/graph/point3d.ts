@@ -31,16 +31,19 @@ export class Point3D extends Point2D {
     return this._z;
   }
 
-  set z(value: number) {
-    this._z = value;
-  }
-
   /**
    * Returns a string representation of the 3D point.
    * @returns - A formatted string with point details.
    */
   toString() {
     return `Point3D(id=${this.id}, x=${this.x}, y=${this.y}, z=${this.z})`;
+  }
+
+  moveTo<T extends Point2D>(point: T) {
+    super.moveTo(point);
+    if (point instanceof Point3D) {
+      this._z = point.z;
+    }
   }
 
   /**
@@ -74,21 +77,26 @@ export class Point3D extends Point2D {
   }
 
   public set matrix(matrix: Matrix) {
-    if (matrix.size()[0] !== 4) return;
-    this.x = matrix.get([0]);
-    this.y = matrix.get([1]);
-    this.z = matrix.get([2]);
+    if (matrix.size()[0] !== 4) {
+      throw new Error('Matrix must have 4 rows');
+    }
+    if (matrix.get([3]) !== 1) {
+      throw new Error(`Invalid matrix value at last row, must be 1. Was: ${matrix.get([3])}.`);
+    }
+    this._x = matrix.get([0]);
+    this._y = matrix.get([1]);
+    this._z = matrix.get([2]);
   }
 
   /**
-   * Adds the coordinates of another point to this point.
+   * Performs the addition of two 3D points in place.
    * @param other - The point to add.
    * @returns - A new Point3D instance with the added coordinates.
    */
   public add<T extends Point2D>(other: T) {
     super.add(other);
     if (other instanceof Point3D) {
-      this.z += other.z;
+      this._z += other.z;
     }
     return this;
   }
@@ -96,7 +104,7 @@ export class Point3D extends Point2D {
   public sub<T extends Point2D>(other: T) {
     super.sub(other);
     if (other instanceof Point3D) {
-      this.z -= other.z;
+      this._z -= other.z;
     }
     return this;
   }

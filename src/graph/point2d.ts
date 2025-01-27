@@ -64,7 +64,7 @@ export class Point2D {
     this._deleted = value;
   }
 
-  private _x: number;
+  protected _x: number;
 
   /**
    * Gets or sets the x-coordinate of the point.
@@ -74,11 +74,7 @@ export class Point2D {
     return this._x;
   }
 
-  set x(value: number) {
-    this._x = value;
-  }
-
-  private _y: number;
+  protected _y: number;
 
   /**
    * Gets or sets the y-coordinate of the point.
@@ -88,13 +84,9 @@ export class Point2D {
     return this._y;
   }
 
-  set y(value: number) {
-    this._y = value;
-  }
-
   /**
    * Returns a string representation of the point.
-   * @returns {string} - A formatted string with point details.
+   * @returns - A formatted string with point details.
    */
   toString() {
     return `Point2D(id=${this.id}, x=${this.x}, y=${this.y})`;
@@ -102,25 +94,30 @@ export class Point2D {
 
   /**
    * Retrieves the unique ID of the point.
-   * @returns {number} - The point's ID.
+   * @returns - The point's ID.
    */
   get id() {
     return this._id;
   }
 
   get matrix(): Matrix {
-    return math.matrix([this.x, this.y]);
+    return math.matrix([this.x, this.y, 1]);
   }
 
   set matrix(matrix: Matrix) {
-    if (matrix.size()[0] !== 3) return;
-    this.x = matrix.get([0]);
-    this.y = matrix.get([1]);
+    if (matrix.size()[0] !== 3) {
+      throw new Error('Point2D.matrix: Invalid matrix size.');
+    }
+    if (matrix.get([2]) !== 1) {
+      throw new Error(`Invalid matrix value at last row, must be 1. Was: ${matrix.get([2])}.`);
+    }
+    this._x = matrix.get([0]);
+    this._y = matrix.get([1]);
   }
 
   /**
    * Retrieves a copy of the neighbor IDs.
-   * @returns {number[]} - An array of neighbor IDs.
+   * @returns - An array of neighbor IDs.
    */
   getNeighbourIds() {
     return [...this.neighbourIds];
@@ -128,11 +125,11 @@ export class Point2D {
 
   /**
    * Moves the point to the specified coordinates.
-   * @param {Point2D} point - The target point.
+   * @param point - The target point.
    */
   moveTo(point: Point2D): void {
-    this.x = point.x;
-    this.y = point.y;
+    this._x = point.x;
+    this._y = point.y;
   }
 
   /**
@@ -169,14 +166,14 @@ export class Point2D {
    * @returns - This point, after modification.
    */
   public add<T extends Point2D>(other: T): this {
-    this.x += other.x;
-    this.y += other.y;
+    this._x += other.x;
+    this._y += other.y;
     return this;
   }
 
   public sub<T extends Point2D>(other: T): this {
-    this.x -= other.x;
-    this.y -= other.y;
+    this._x -= other.x;
+    this._y -= other.y;
     return this;
   }
 }

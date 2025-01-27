@@ -33,7 +33,6 @@ export abstract class Editor {
       Editor.notify((editor) => editor.onBackgroundLoaded());
       Editor.center();
       Editor.draw();
-      return;
     };
     Editor.image.onerror = (e) => {
       throw new Error('Failed to load image: ' + e);

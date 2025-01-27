@@ -1,7 +1,6 @@
 import { FaceLandmarker } from '@mediapipe/tasks-vision';
 import { type CanvasGradient, type CanvasPattern } from 'canvas';
 import { Perspective } from '@/graph/perspective';
-import { Graph } from '@/graph/graph';
 import {
   Connection,
   FACE_LANDMARKS_NOSE,
@@ -54,20 +53,9 @@ export class FaceMeshEditor extends Editor {
 
     // Size canvas
     this.editorConfigStore.$subscribe(() => {
+      // Manually redraw the canvas on config change
       Editor.draw();
     });
-  }
-
-  private _graph: Graph<Point3D> = new Graph<Point3D>([]);
-
-  get graph(): Graph<Point3D> {
-    return this._graph;
-  }
-
-  set graph(value: Graph<Point3D> | null | undefined) {
-    if (value) {
-      this._graph = value.clone();
-    }
   }
 
   get tool(): AnnotationTool {
@@ -91,67 +79,87 @@ export class FaceMeshEditor extends Editor {
   }
 
   onMove(relativeMouseX: number, relativeMouseY: number): void {
+    // Update normalized coordinates based on mouse position
+    const alreadyUpdated = new Set<number>();
     const relativeMouseNormalized = Perspective.unproject(
       Editor.image,
       new Point2D(-1, relativeMouseX, relativeMouseY, [])
     );
-    const selectedPoint = this.graph.getSelected();
+    const h = this.annotationHistoryStore.selected();
+    if (!h) {
+      console.error('No selected history present');
+      return;
+    }
+
+    const graph = h.get();
+    if (!graph) {
+      console.error('No graph for selected history present');
+      return;
+    }
+
+    const selectedPoint = graph.getSelected();
     if (!selectedPoint) {
       return;
     }
 
-    const updatePoints = (points: Point3D[], depth: number) => {
-      const updatedPoints: Point3D[] = [];
-      const relativeMoves: Point3D[] = [];
-      points.forEach((point) => {
-        const influenceFactor = Math.exp(-depth);
-        const newX = point.x + (relativeMouseNormalized.x - point.x) * influenceFactor;
-        const newY = point.y + (relativeMouseNormalized.y - point.y) * influenceFactor;
-        const move = new Point3D(point.id, newX - point.x, newY - point.y, 0, []);
-        const newPoint = new Point3D(-1, newX, newY, point.z, []);
-        point.moveTo(newPoint);
-        updatedPoints.push(point);
-        relativeMoves.push(move);
-      });
-      return [updatedPoints, relativeMoves];
-    };
+    let neighbourPoints = [selectedPoint];
+    const deltaX = relativeMouseNormalized.x - selectedPoint.x;
+    const deltaY = relativeMouseNormalized.y - selectedPoint.y;
 
-    const neighbourPoints = this.graph.getNeighbourPointsOf(selectedPoint);
-    let pointsToUpdate = [selectedPoint];
-    let relativeMoves: Point3D[] = [];
-    [pointsToUpdate, relativeMoves] = updatePoints(pointsToUpdate, 0);
-    if (neighbourPoints) {
-      // eslint-disable-next-line no-loops/no-loops
-      for (let depth = 0; depth < this.editorConfigStore.dragDepth; depth++) {
-        [pointsToUpdate, relativeMoves] = updatePoints(pointsToUpdate, depth);
-        const nextNeighbours = neighbourPoints.filter(
-          (point): point is Point3D => point !== undefined && !pointsToUpdate.includes(point)
-        );
-        pointsToUpdate = pointsToUpdate.concat(nextNeighbours);
-      }
+    // early return if no movement
+    if (deltaX === 0 && deltaY === 0) {
+      return;
     }
 
-    this.processMultipleViews(relativeMoves);
+    const movements: Point3D[] = [];
+    // eslint-disable-next-line no-loops/no-loops
+    for (let depth = 0; depth <= this.editorConfigStore.dragDepth; depth++) {
+      let tmpPoints: Point3D[] = [];
+      neighbourPoints.forEach((neighbour) => {
+        if (!neighbour) {
+          return;
+        }
+        const influenceFactor = Math.exp(-depth);
+        alreadyUpdated.add(neighbour.id);
+        const move = new Point3D(
+          neighbour.id,
+          deltaX * influenceFactor,
+          deltaY * influenceFactor,
+          0,
+          []
+        );
+        neighbour.add(move);
+        movements.push(move);
+        const neighbors = graph.getNeighbourPointsOf(neighbour);
+        if (neighbors) {
+          tmpPoints = tmpPoints.concat(
+            neighbors.filter((point): point is Point3D => point !== undefined)
+          );
+        }
+      });
+      neighbourPoints = tmpPoints.filter((p) => !alreadyUpdated.has(p.id));
+    }
+    this.processMultipleViews(movements).then();
   }
 
   /**
    * Process the points to update in the other views. Will broadcast the changes to the other views.
    * @param pointsToUpdate the points to update in the other views.
-   *  The coordinates contained here are the relative movement.
+   *  The coordinates contained here are the relative movement. Can contain the same point multiple times.
    */
-  private processMultipleViews(pointsToUpdate: Point3D[]) {
+  private async processMultipleViews(pointsToUpdate: Point3D[]) {
     const history = this.annotationHistoryStore.selected();
     if (!history) {
       console.error('No selected history present');
       return;
     }
 
-    const orientation = history.file.selected;
-
     if (!history?.file) {
       console.error('No file selected for selected history');
       return;
     }
+
+    const orientation = history.file.selected;
 
     /*
       obtain the transformation matrix for the currently manually modified image.
@@ -190,10 +198,14 @@ export class FaceMeshEditor extends Editor {
   }
 
   onMouseDown(event: MouseEvent): void {
+    const graph = this.annotationHistoryStore.selected()?.get();
+    if (!graph) {
+      return;
+    }
     // Check if any normalized 3D point is clicked
     if (event.button === 0) {
       // left button
-      this._graph.points
+      graph.points
         .filter((p) => p.hovered && !p.deleted)
         .forEach((p) => {
           p.selected = true;
@@ -210,12 +222,16 @@ export class FaceMeshEditor extends Editor {
   }
 
   onMouseMove(_: MouseEvent, relativeMouseX: number, relativeMouseY: number): void {
+    const graph = this.annotationHistoryStore.selected()?.get();
+    if (!graph) {
+      return;
+    }
     let pointHover = false;
     const relativeMouse = Perspective.unproject(
       Editor.image,
       new Point2D(-1, relativeMouseX, relativeMouseY, [])
     );
-    this._graph.points.forEach((point) => {
+    graph.points.forEach((point) => {
       if (
         !pointHover &&
         Perspective.intersects(
@@ -232,25 +248,28 @@ export class FaceMeshEditor extends Editor {
         point.hovered = false;
       }
     });
-    if (pointHover) {
-      Editor.draw();
-    }
   }
 
   onMouseUp(_: MouseEvent) {
-    this._graph.points.forEach((point) => (point.selected = false));
+    const graph = this.annotationHistoryStore.selected()?.get();
+    if (!graph) {
+      return;
+    }
+    graph.points.forEach((point) => (point.selected = false));
   }
 
-  onBackgroundLoaded() {
-    this.graph = this.annotationHistoryStore.selectedHistory?.get();
-  }
+  onBackgroundLoaded() {}
 
   onPointsEdited() {
     const history = this.annotationHistoryStore.selectedHistory;
     if (!history) {
       return;
     }
-    history.add(this._graph);
+    const graph = history.get();
+    if (!graph) {
+      return;
+    }
+    history.add(graph);
     history.status = SaveStatus.edited;
   }
 
@@ -286,36 +305,38 @@ export class FaceMeshEditor extends Editor {
     connections: Connection[],
     color: string | CanvasGradient | CanvasPattern
   ): void {
-    if (this.graph) {
-      const pointPairs = connections.map((connection) => {
-        return {
-          start: this.graph.getById(connection.start),
-          end: this.graph.getById(connection.end)
-        };
-      });
-      // Draw edges
-      Editor.ctx.beginPath();
-      Editor.ctx.strokeStyle = color;
-      Editor.ctx.lineWidth = LINE_WIDTH_DEFAULT / Editor.zoomScale;
-      pointPairs.forEach((connection) => {
-        let startPoint = connection.start;
-        let endPoint = connection.end;
-        if (startPoint && endPoint && !startPoint.deleted && !endPoint.deleted) {
-          startPoint = Perspective.project(Editor.image, startPoint);
-          endPoint = Perspective.project(Editor.image, endPoint);
-          Editor.ctx.moveTo(startPoint.x, startPoint.y);
-          Editor.ctx.lineTo(endPoint.x, endPoint.y);
-        }
-      });
-      Editor.ctx.stroke();
-      // Draw points
-      pointPairs.forEach((connection) => {
-        const startPoint = connection.start;
-        const endPoint = connection.end;
-        if (!startPoint || !endPoint) return;
-        this.drawPoint(startPoint);
-        this.drawPoint(endPoint);
-      });
+    const graph = this.annotationHistoryStore.selected()?.get();
+    if (!graph) {
+      return;
     }
+    const pointPairs = connections.map((connection) => {
+      return {
+        start: graph.getById(connection.start),
+        end: graph.getById(connection.end)
+      };
+    });
+    // Draw edges
+    Editor.ctx.beginPath();
+    Editor.ctx.strokeStyle = color;
+    Editor.ctx.lineWidth = LINE_WIDTH_DEFAULT / Editor.zoomScale;
+    pointPairs.forEach((connection) => {
+      let startPoint = connection.start;
+      let endPoint = connection.end;
+      if (startPoint && endPoint && !startPoint.deleted && !endPoint.deleted) {
+        startPoint = Perspective.project(Editor.image, startPoint);
+        endPoint = Perspective.project(Editor.image, endPoint);
+        Editor.ctx.moveTo(startPoint.x, startPoint.y);
+        Editor.ctx.lineTo(endPoint.x, endPoint.y);
+      }
+    });
+    Editor.ctx.stroke();
+    // Draw points
+    pointPairs.forEach((connection) => {
+      const startPoint = connection.start;
+      const endPoint = connection.end;
+      if (!startPoint || !endPoint) return;
+      this.drawPoint(startPoint);
+      this.drawPoint(endPoint);
+    });
   }
 }
