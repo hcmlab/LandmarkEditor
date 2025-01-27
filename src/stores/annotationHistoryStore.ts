@@ -80,7 +80,7 @@ export const useAnnotationHistoryStore = defineStore({
           h.add(graph);
         }
         h.file.selected = Orientation.center;
-        this.histories.push(h);
+        this.histories.push(h as FileAnnotationHistory<Point3D>); // NOSONAR - false positive. Else this will be marked as an error by Chrome.
       });
       if (!this.selectedHistory) {
         this.selectedHistory = this.histories[0];

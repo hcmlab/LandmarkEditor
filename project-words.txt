@@ -21,3 +21,4 @@ Checkmark
 thumbmarkjs
 pinia
 shortkey
+NOSONAR
