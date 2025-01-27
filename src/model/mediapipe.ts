@@ -46,12 +46,14 @@ export class MediapipeModel implements ModelApi<Point3D> {
   static processResult(result: FaceLandmarkerResult) {
     const graphs = result.faceLandmarks
       .map((landmarks) =>
-        landmarks.map((dict, idx) => {
-          const ids = Array.from(
-            findNeighbourPointIds(idx, FaceLandmarker.FACE_LANDMARKS_TESSELATION, 1)
-          );
-          return new Point3D(idx, dict.x, dict.y, dict.z, ids);
-        })
+        landmarks
+          .map((dict, idx) => {
+            const ids = Array.from(
+              findNeighbourPointIds(idx, FaceLandmarker.FACE_LANDMARKS_TESSELATION, 1)
+            );
+            return new Point3D(idx, dict.x, dict.y, dict.z, ids);
+          })
+          .map((point) => point as Point3D)
       )
       // filter out the iris markings
       .map((landmarks) => {

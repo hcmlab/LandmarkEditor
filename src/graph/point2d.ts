@@ -1,3 +1,6 @@
+import type { Matrix } from 'mathjs';
+import { math } from '@/util/math';
+
 /**
  * Represents a 2D point with an ID, coordinates, and neighbor information.
  */
@@ -105,6 +108,16 @@ export class Point2D {
     return this._id;
   }
 
+  get matrix(): Matrix {
+    return math.matrix([this.x, this.y]);
+  }
+
+  set matrix(matrix: Matrix) {
+    if (matrix.size()[0] !== 3) return;
+    this.x = matrix.get([0]);
+    this.y = matrix.get([1]);
+  }
+
   /**
    * Retrieves a copy of the neighbor IDs.
    * @returns {number[]} - An array of neighbor IDs.
@@ -124,7 +137,7 @@ export class Point2D {
 
   /**
    * Creates a shallow copy of the point.
-   * @returns {Point2D} - A new Point2D instance with cloned properties.
+   * @returns - A new Point2D instance with cloned properties.
    */
   clone() {
     const copy = new Point2D(this.id, this._x, this._y, this.neighbourIds);
@@ -136,7 +149,7 @@ export class Point2D {
 
   /**
    * Converts the point to a dictionary object.
-   * @returns {object} - A dictionary containing point properties.
+   * @returns - A dictionary containing point properties.
    */
   toDict() {
     return {
@@ -148,5 +161,22 @@ export class Point2D {
       // selected: this.selected,
       // neighbourIds: this.neighbourIds
     };
+  }
+
+  /**
+   * Performs vector addition in-place.
+   * @param other - The point to add to this point.
+   * @returns - This point, after modification.
+   */
+  public add<T extends Point2D>(other: T): this {
+    this.x += other.x;
+    this.y += other.y;
+    return this;
+  }
+
+  public sub<T extends Point2D>(other: T): this {
+    this.x -= other.x;
+    this.y -= other.y;
+    return this;
   }
 }

@@ -1,11 +1,16 @@
 import { FaceLandmarker, FilesetResolver, type NormalizedLandmark } from '@mediapipe/tasks-vision';
+import { Matrix } from 'mathjs';
 import { Orientation } from '@/enums/orientation';
 import type { ImageFile } from '@/imageFile';
+import { math, reshape } from '@/util/math';
 
 export type orientationGuessResult = {
   image: ImageFile;
   orientation: Orientation;
   mesh: NormalizedLandmark[];
+  transformationMatrix: Matrix;
+  width: number;
+  height: number;
 };
 
 export async function guessOrientation(images: ImageFile[]): Promise<orientationGuessResult[]> {
@@ -17,8 +22,17 @@ export async function guessOrientation(images: ImageFile[]): Promise<orientation
       const res = tool.detect(data);
       const mesh = res.faceLandmarks[0];
       const orientation = orientationFromMesh(mesh);
-
-      const result: orientationGuessResult = { image, orientation, mesh };
+      const transformationMatrix = math.matrix(reshape(res.facialTransformationMatrixes[0]));
+      const width = data.width;
+      const height = data.height;
+      const result: orientationGuessResult = {
+        image,
+        orientation,
+        mesh,
+        transformationMatrix,
+        width,
+        height
+      };
       return result;
     })
   );
@@ -38,7 +52,8 @@ function getMeshAnnotationTool() {
       minFaceDetectionConfidence: 0.3,
       minFacePresenceConfidence: 0.3,
       runningMode: 'IMAGE',
-      numFaces: 1
+      numFaces: 1,
+      outputFacialTransformationMatrixes: true
     })
   );
 }

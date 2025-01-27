@@ -1,7 +1,6 @@
 import { FaceLandmarker } from '@mediapipe/tasks-vision';
 import { type CanvasGradient, type CanvasPattern } from 'canvas';
-import { Point2D } from '@/graph/point2d';
-import { Perspective2D } from '@/graph/perspective2d';
+import { Perspective } from '@/graph/perspective';
 import { Graph } from '@/graph/graph';
 import {
   Connection,
@@ -14,6 +13,9 @@ import { useAnnotationHistoryStore } from '@/stores/annotationHistoryStore';
 import { Editor } from '@/Editors/Editor';
 import { SaveStatus } from '@/enums/saveStatus';
 import { AnnotationTool } from '@/enums/annotationTool';
+import { Orientation } from '@/enums/orientation';
+import { Point3D } from '@/graph/point3d';
+import { Point2D } from '@/graph/point2d';
 
 const COLOR_POINT_HOVERED = 'rgba(255,250,163,0.6)';
 
@@ -56,13 +58,13 @@ export class FaceMeshEditor extends Editor {
     });
   }
 
-  private _graph: Graph<Point2D> = new Graph<Point2D>([]);
+  private _graph: Graph<Point3D> = new Graph<Point3D>([]);
 
-  get graph(): Graph<Point2D> {
+  get graph(): Graph<Point3D> {
     return this._graph;
   }
 
-  set graph(value: Graph<Point2D> | null | undefined) {
+  set graph(value: Graph<Point3D> | null | undefined) {
     if (value) {
       this._graph = value.clone();
     }
@@ -89,7 +91,7 @@ export class FaceMeshEditor extends Editor {
   }
 
   onMove(relativeMouseX: number, relativeMouseY: number): void {
-    const relativeMouseNormalized = Perspective2D.unproject(
+    const relativeMouseNormalized = Perspective.unproject(
       Editor.image,
       new Point2D(-1, relativeMouseX, relativeMouseY, [])
     );
@@ -98,31 +100,89 @@ export class FaceMeshEditor extends Editor {
       return;
     }
 
-    const updatePoints = (points: Point2D[], depth: number) => {
-      const updatedPoints: Point2D[] = [];
+    const updatePoints = (points: Point3D[], depth: number) => {
+      const updatedPoints: Point3D[] = [];
+      const relativeMoves: Point3D[] = [];
       points.forEach((point) => {
         const influenceFactor = Math.exp(-depth);
         const newX = point.x + (relativeMouseNormalized.x - point.x) * influenceFactor;
         const newY = point.y + (relativeMouseNormalized.y - point.y) * influenceFactor;
-        const newPoint = new Point2D(-1, newX, newY, []);
+        const move = new Point3D(point.id, newX - point.x, newY - point.y, 0, []);
+        const newPoint = new Point3D(-1, newX, newY, point.z, []);
         point.moveTo(newPoint);
         updatedPoints.push(point);
+        relativeMoves.push(move);
       });
-      return updatedPoints;
+      return [updatedPoints, relativeMoves];
     };
 
     const neighbourPoints = this.graph.getNeighbourPointsOf(selectedPoint);
+    let pointsToUpdate = [selectedPoint];
+    let relativeMoves: Point3D[] = [];
+    [pointsToUpdate, relativeMoves] = updatePoints(pointsToUpdate, 0);
     if (neighbourPoints) {
-      let pointsToUpdate = [selectedPoint];
       // eslint-disable-next-line no-loops/no-loops
-      for (let depth = 0; depth <= this.editorConfigStore.dragDepth; depth++) {
-        pointsToUpdate = updatePoints(pointsToUpdate, depth);
+      for (let depth = 0; depth < this.editorConfigStore.dragDepth; depth++) {
+        [pointsToUpdate, relativeMoves] = updatePoints(pointsToUpdate, depth);
         const nextNeighbours = neighbourPoints.filter(
-          (point): point is Point2D => point !== undefined && !pointsToUpdate.includes(point)
+          (point): point is Point3D => point !== undefined && !pointsToUpdate.includes(point)
         );
         pointsToUpdate = pointsToUpdate.concat(nextNeighbours);
       }
     }
+
+    this.processMultipleViews(relativeMoves);
+  }
+
+  /**
+   * Process the points to update in the other views. Will broadcast the changes to the other views.
+   * @param pointsToUpdate the points to update in the other views.
+   *  The coordinates contained here are the relative movement.
+   */
+  private processMultipleViews(pointsToUpdate: Point3D[]) {
+    const history = this.annotationHistoryStore.selected();
+    if (!history) {
+      console.error('No selected history present');
+      return;
+    }
+
+    const orientation = history.file.selected;
+
+    if (!history?.file) {
+      console.error('No file selected for selected history');
+      return;
+    }
+
+    /*
+      obtain the transformation matrix for the currently manually modified image.
+      This matrix transforms the coordinates for the selected image to an arbitrary coordinate space.
+      Apply the inverse matrix of the other images to the resulting coordinates,
+      to obtain the original position on the other images.
+    */
+    let matrix = null;
+    switch (orientation) {
+      case Orientation.left:
+        matrix = history.file.left?.transformationMatrix;
+        break;
+      case Orientation.center:
+        matrix = history.file.center?.transformationMatrix;
+        break;
+      case Orientation.right:
+        matrix = history.file.right?.transformationMatrix;
+        break;
+      default:
+        console.error(
+          `Orientation not found for selected history: ${history.file.selectedFile?.name}`
+        );
+        return;
+    }
+
+    if (!matrix) {
+      console.error(`No matrix generated for selected history: ${history.file.selectedFile?.name}`);
+      return;
+    }
+
+    history.updateFromMatrix(matrix, pointsToUpdate);
   }
 
   onPan(_: number, __: number): void {
@@ -151,14 +211,14 @@ export class FaceMeshEditor extends Editor {
 
   onMouseMove(_: MouseEvent, relativeMouseX: number, relativeMouseY: number): void {
     let pointHover = false;
-    const relativeMouse = Perspective2D.unproject(
+    const relativeMouse = Perspective.unproject(
       Editor.image,
       new Point2D(-1, relativeMouseX, relativeMouseY, [])
     );
     this._graph.points.forEach((point) => {
       if (
         !pointHover &&
-        Perspective2D.intersects(
+        Perspective.intersects(
           Editor.image,
           point,
           relativeMouse,
@@ -194,9 +254,9 @@ export class FaceMeshEditor extends Editor {
     history.status = SaveStatus.edited;
   }
 
-  private drawPoint(point: Point2D): void {
+  private drawPoint(point: Point3D): void {
     if (point && !point.deleted) {
-      const projectedPoint = Perspective2D.project(Editor.image, point);
+      const projectedPoint = Perspective.project(Editor.image, point);
 
       if (point.hovered || point.selected) {
         const color = point.hovered ? COLOR_POINT_HOVERED : COLOR_POINT_SELECTED;
@@ -241,8 +301,8 @@ export class FaceMeshEditor extends Editor {
         let startPoint = connection.start;
         let endPoint = connection.end;
         if (startPoint && endPoint && !startPoint.deleted && !endPoint.deleted) {
-          startPoint = Perspective2D.project(Editor.image, startPoint);
-          endPoint = Perspective2D.project(Editor.image, endPoint);
+          startPoint = Perspective.project(Editor.image, startPoint);
+          endPoint = Perspective.project(Editor.image, endPoint);
           Editor.ctx.moveTo(startPoint.x, startPoint.y);
           Editor.ctx.lineTo(endPoint.x, endPoint.y);
         }

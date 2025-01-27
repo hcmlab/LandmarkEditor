@@ -1,9 +1,11 @@
+import { type MathNumericType, type Matrix } from 'mathjs';
 import { Point2D } from '@/graph/point2d';
 import { Graph } from '@/graph/graph';
 import { SaveStatus } from '@/enums/saveStatus';
 
 import type { MultipleViewImage } from '@/interface/multiple_view_image';
 import { Orientation } from '@/enums/orientation';
+import { math, reverse } from '@/util/math';
 
 export interface PointData {
   deleted: boolean;
@@ -40,6 +42,19 @@ export class FileAnnotationHistory<T extends Point2D> {
     this._status = SaveStatus.unedited;
   }
 
+  private static orientationToIndex(orientation: Orientation) {
+    switch (orientation) {
+      case Orientation.center:
+        return 1;
+      case Orientation.left:
+        return 0;
+      case Orientation.right:
+        return 2;
+      case Orientation.unknown:
+        throw Error('Unknown orientation');
+    }
+  }
+
   private _status: SaveStatus;
 
   get status(): SaveStatus {
@@ -71,29 +86,11 @@ export class FileAnnotationHistory<T extends Point2D> {
   private __history: Graph<T>[][] = [[], [], []];
 
   private get _history() {
-    switch (this.file.selected) {
-      case Orientation.center:
-        return this.__history[0];
-      case Orientation.left:
-        return this.__history[1];
-      case Orientation.right:
-        return this.__history[2];
-    }
-    return this.__history[0];
+    return this.__history[FileAnnotationHistory.orientationToIndex(this.file.selected)];
   }
 
   private set _history(value: Graph<T>[]) {
-    switch (this.file.selected) {
-      case Orientation.center:
-        this.__history[0] = value;
-        break;
-      case Orientation.left:
-        this.__history[1] = value;
-        break;
-      case Orientation.right:
-        this.__history[2] = value;
-        break;
-    }
+    this.__history[FileAnnotationHistory.orientationToIndex(this.file.selected)] = value;
   }
 
   protected get history() {
@@ -101,29 +98,11 @@ export class FileAnnotationHistory<T extends Point2D> {
   }
 
   private get currentHistoryIndex() {
-    switch (this.file.selected) {
-      case Orientation.center:
-        return this._currentHistoryIndex[0];
-      case Orientation.left:
-        return this._currentHistoryIndex[1];
-      case Orientation.right:
-        return this._currentHistoryIndex[2];
-    }
-    return -1;
+    return this._currentHistoryIndex[FileAnnotationHistory.orientationToIndex(this.file.selected)];
   }
 
   private set currentHistoryIndex(value: number) {
-    switch (this.file.selected) {
-      case Orientation.center:
-        this._currentHistoryIndex[0] = value;
-        break;
-      case Orientation.left:
-        this._currentHistoryIndex[1] = value;
-        break;
-      case Orientation.right:
-        this._currentHistoryIndex[2] = value;
-        break;
-    }
+    this._currentHistoryIndex[FileAnnotationHistory.orientationToIndex(this.file.selected)] = value;
   }
 
   /**
@@ -261,5 +240,74 @@ export class FileAnnotationHistory<T extends Point2D> {
    */
   markAsSent(): void {
     this._status = SaveStatus.unedited;
+  }
+
+  /**
+   * Updates the points in the history of the specified orientation using the given absolute point and perspective matrix.
+   * @param matrix - The perspective matrix of the manually modified image.
+   * @param points - The array of movement to update in other images. Already update in the source image.
+   */
+  public updateFromMatrix(matrix: Matrix, points: T[]) {
+    points.forEach((point) => {
+      /** movement of the point to modify in arbitrary common space */
+      let abs_point = math.multiply(matrix, point.matrix);
+      abs_point = math.divide(abs_point, abs_point.get([3])) as Matrix<MathNumericType>;
+
+      const orientation = this.file.selected;
+
+      // if a perspective wasn't manually updated, update it.
+      if (orientation !== Orientation.left && this.file.left) {
+        const file = this.file.left;
+        /** inverse matrix from arbitrary common space to left image space */
+        const inv_matrix = reverse(file.transformationMatrix);
+        this.updatePerspectiveFromMatrix(point.id, abs_point, inv_matrix, Orientation.left);
+      }
+
+      if (orientation !== Orientation.center && this.file.center) {
+        const file = this.file.center;
+        /** inverse matrix from arbitrary common space to center image space. */
+        const inv_matrix = reverse(file.transformationMatrix);
+        this.updatePerspectiveFromMatrix(point.id, abs_point, inv_matrix, Orientation.center);
+      }
+
+      if (orientation !== Orientation.right && this.file.right) {
+        /** inverse matrix from arbitrary common space to right image space */
+        const file = this.file.right;
+        const inv_matrix = reverse(file.transformationMatrix);
+        this.updatePerspectiveFromMatrix(point.id, abs_point, inv_matrix, Orientation.right);
+      }
+    });
+  }
+
+  /**
+   * Updates the point at the given id in the history of the specified orientation using the given absolute point and perspective matrix.
+   * @param point_id the id of the point to update
+   * @param abs_move the relative movement inside the absolute coordinate space
+   * @param matrix the perspective matrix to convert the movement to the perspective of the other image
+   * @param orientation the orientation to update
+   */
+  private updatePerspectiveFromMatrix(
+    point_id: number,
+    abs_move: Matrix,
+    matrix: Matrix,
+    orientation: Orientation
+  ) {
+    const orientation_id = FileAnnotationHistory.orientationToIndex(orientation);
+    const other =
+      this.__history[orientation_id][this._currentHistoryIndex[orientation_id]].getById(point_id);
+
+    if (!other) {
+      console.error(
+        `Couldn't find corresponding point in other perspective (orientation: ${orientation})`
+      );
+      return;
+    }
+    let move = math.multiply(matrix, abs_move);
+    move = math.divide(move, move.get([3])) as Matrix<MathNumericType>;
+    const move_pt = other.clone() as T;
+    move_pt.matrix = move;
+    const clone = other.clone();
+    clone.add(move_pt);
+    other.moveTo(clone);
   }
 }

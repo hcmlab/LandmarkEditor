@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import type { FaceLandmarkerResult } from '@mediapipe/tasks-vision';
 import { FileAnnotationHistory } from '@/cache/fileAnnotationHistory';
-import { Point2D } from '@/graph/point2d';
+import { Point3D } from '@/graph/point3d';
 import { ImageFile } from '@/imageFile';
 import type { AnnotationData, ModelApi } from '@/model/modelApi';
 import { SaveStatus } from '@/enums/saveStatus';
@@ -15,15 +15,15 @@ export const useAnnotationHistoryStore = defineStore({
   id: 'annotationHistory',
 
   state: (): {
-    histories: FileAnnotationHistory<Point2D>[];
-    selectedHistory: FileAnnotationHistory<Point2D> | null;
+    histories: FileAnnotationHistory<Point3D>[];
+    selectedHistory: FileAnnotationHistory<Point3D> | null;
   } => ({
     histories: [],
     selectedHistory: null
   }),
 
   actions: {
-    async add(file: File, api: ModelApi<Point2D>) {
+    async add(file: File, api: ModelApi<Point3D>) {
       const imageFile = await ImageFile.create(file);
       if (!imageFile) {
         // Todo - error message
@@ -44,7 +44,7 @@ export const useAnnotationHistoryStore = defineStore({
     empty(): boolean {
       return this.histories?.length <= 0;
     },
-    find(fileName: string, sha256: string): FileAnnotationHistory<Point2D> {
+    find(fileName: string, sha256: string): FileAnnotationHistory<Point3D> {
       return this.histories.find(
         (history) =>
           (history.file.left?.image.filePointer.name === fileName &&
@@ -53,12 +53,12 @@ export const useAnnotationHistoryStore = defineStore({
             history.file.right.image.sha === sha256) ||
           (history.file.center?.image.filePointer.name === fileName &&
             history.file.center.image.sha === sha256)
-      ) as FileAnnotationHistory<Point2D>;
+      ) as FileAnnotationHistory<Point3D>;
     },
 
     async merge(data: MultipleViewImage[]) {
       data.forEach((value) => {
-        const h = new FileAnnotationHistory<Point2D>(value);
+        const h = new FileAnnotationHistory<Point3D>(value);
         const mesh = {} as FaceLandmarkerResult;
         if (!value.center?.mesh) return;
         mesh.faceLandmarks = [value.center?.mesh];
@@ -90,14 +90,14 @@ export const useAnnotationHistoryStore = defineStore({
     /**
      * Returns any files with pending changes
      */
-    getUnsaved(): FileAnnotationHistory<Point2D>[] {
+    getUnsaved(): FileAnnotationHistory<Point3D>[] {
       return this.histories.filter(
         (file) => file.status === SaveStatus.saved
-      ) as FileAnnotationHistory<Point2D>[];
+      ) as FileAnnotationHistory<Point3D>[];
     },
 
-    selected(): FileAnnotationHistory<Point2D> | null {
-      return this.selectedHistory as FileAnnotationHistory<Point2D> | null;
+    selected(): FileAnnotationHistory<Point3D> | null {
+      return this.selectedHistory as FileAnnotationHistory<Point3D> | null;
     },
 
     /**

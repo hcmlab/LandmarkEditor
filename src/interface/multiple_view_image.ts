@@ -12,7 +12,6 @@ export class MultipleViewImage {
     this.center = null;
     this.right = null;
     this.selected = Orientation.center;
-    console.log('Constructor: ', this.selected);
   }
 
   public get selectedFile(): File | undefined {
@@ -26,5 +25,18 @@ export class MultipleViewImage {
       return this.right?.image.filePointer;
     }
     return undefined;
+  }
+
+  public get selectedGuess(): orientationGuessResult | null {
+    if (this.selected === Orientation.left) {
+      return this.left;
+    }
+    if (this.selected === Orientation.center) {
+      return this.center;
+    }
+    if (this.selected === Orientation.right) {
+      return this.right;
+    }
+    return null;
   }
 }

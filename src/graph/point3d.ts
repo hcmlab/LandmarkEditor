@@ -1,5 +1,7 @@
+import type { Matrix } from 'mathjs';
 import { Point2D } from './point2d';
 import type { PointData } from '@/cache/fileAnnotationHistory';
+import { math } from '@/util/math';
 
 /**
  * Represents a 3D point with an ID, coordinates, and neighbor information.
@@ -65,5 +67,37 @@ export class Point3D extends Point2D {
       z: this.z,
       deleted: this.deleted
     };
+  }
+
+  public get matrix(): Matrix {
+    return math.matrix([this.x, this.y, this.z, 1]);
+  }
+
+  public set matrix(matrix: Matrix) {
+    if (matrix.size()[0] !== 4) return;
+    this.x = matrix.get([0]);
+    this.y = matrix.get([1]);
+    this.z = matrix.get([2]);
+  }
+
+  /**
+   * Adds the coordinates of another point to this point.
+   * @param other - The point to add.
+   * @returns - A new Point3D instance with the added coordinates.
+   */
+  public add<T extends Point2D>(other: T) {
+    super.add(other);
+    if (other instanceof Point3D) {
+      this.z += other.z;
+    }
+    return this;
+  }
+
+  public sub<T extends Point2D>(other: T) {
+    super.sub(other);
+    if (other instanceof Point3D) {
+      this.z -= other.z;
+    }
+    return this;
   }
 }
