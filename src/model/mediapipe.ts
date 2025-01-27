@@ -6,18 +6,17 @@ import {
 import type { AnnotationData, ModelApi } from './modelApi';
 import { findNeighbourPointIds } from '@/graph/face_landmarks_features';
 import { Graph } from '@/graph/graph';
-import { Point2D } from '@/graph/point2d';
+import { Point3D } from '@/graph/point3d';
 import { ModelType } from '@/enums/modelType';
 import { FileAnnotationHistory } from '@/cache/fileAnnotationHistory';
-import { Point3D } from '@/graph/point3d';
 import { imageFromFile } from '@/util/imageFromFile';
 import type { MultipleViewImage } from '@/interface/multiple_view_image';
 
 /**
  * Represents a model using MediaPipe for face landmark detection.
- * Implements the ModelApi interface for working with Point2D graphs.
+ * Implements the ModelApi interface for working with Point3D graphs.
  */
-export class MediapipeModel implements ModelApi<Point2D> {
+export class MediapipeModel implements ModelApi<Point3D> {
   private meshLandmarker: FaceLandmarker | null = null;
 
   /**
@@ -47,14 +46,12 @@ export class MediapipeModel implements ModelApi<Point2D> {
   static processResult(result: FaceLandmarkerResult) {
     const graphs = result.faceLandmarks
       .map((landmarks) =>
-        landmarks
-          .map((dict, idx) => {
-            const ids = Array.from(
-              findNeighbourPointIds(idx, FaceLandmarker.FACE_LANDMARKS_TESSELATION, 1)
-            );
-            return new Point3D(idx, dict.x, dict.y, dict.z, ids);
-          })
-          .map((point) => point as Point2D)
+        landmarks.map((dict, idx) => {
+          const ids = Array.from(
+            findNeighbourPointIds(idx, FaceLandmarker.FACE_LANDMARKS_TESSELATION, 1)
+          );
+          return new Point3D(idx, dict.x, dict.y, dict.z, ids);
+        })
       )
       // filter out the iris markings
       .map((landmarks) => {
@@ -72,8 +69,8 @@ export class MediapipeModel implements ModelApi<Point2D> {
     return null;
   }
 
-  async detect(imageFile: MultipleViewImage): Promise<FileAnnotationHistory<Point2D>> {
-    return new Promise<FileAnnotationHistory<Point2D>>((resolve, reject) => {
+  async detect(imageFile: MultipleViewImage): Promise<FileAnnotationHistory<Point3D>> {
+    return new Promise<FileAnnotationHistory<Point3D>>((resolve, reject) => {
       if (!imageFile.center) return;
 
       const image = new Image();
@@ -83,12 +80,12 @@ export class MediapipeModel implements ModelApi<Point2D> {
           reject(new Error('Face(s) could not be detected!'));
           return;
         }
-        const graph = MediapipeModel.processResult(result as FaceLandmarkerResult);
+        const graph = MediapipeModel.processResult(result);
         if (!graph) {
           reject(new Error('Face(s) could not be detected!'));
           return;
         }
-        const h = new FileAnnotationHistory<Point2D>(imageFile);
+        const h = new FileAnnotationHistory<Point3D>(imageFile);
         h.add(graph);
         resolve(h);
       };

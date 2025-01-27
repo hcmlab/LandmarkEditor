@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue';
-import { Point2D } from '@/graph/point2d';
+import { Point3D } from '@/graph/point3d';
 import { ModelType } from '@/enums/modelType';
 import { useModelStore } from '@/stores/modelStore';
 import { useAnnotationHistoryStore } from '@/stores/annotationHistoryStore';
@@ -80,7 +80,7 @@ onMounted(() => {
           // Todo: inform the user the data cant be parsed for this image
           return;
         }
-        let h = FileAnnotationHistory.fromJson(rawData, history.file,(id, neighbors) => new Point2D(id, 0, 0, neighbors));
+        let h = FileAnnotationHistory.fromJson(rawData, history.file,(id, neighbors) => new Point3D(id, 0, 0, 0, neighbors));
         if (!h) {
           // Todo: error popup
           return;
