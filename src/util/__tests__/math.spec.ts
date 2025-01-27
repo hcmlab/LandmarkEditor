@@ -14,6 +14,13 @@ describe('reshape', () => {
     expect(result).toBeInstanceOf(Array);
     expect(result.length).toBe(3);
     expect(result[0].length).toBe(4);
+    expect(result[1].length).toBe(4);
+    expect(result[2].length).toBe(4);
+    expect(result).toEqual([
+      [1, 2, 3, 4],
+      [5, 6, 7, 8],
+      [9, 10, 11, 12]
+    ]);
   });
 
   it('correctly reshapes a matrix with different shape', () => {
@@ -26,6 +33,12 @@ describe('reshape', () => {
     expect(result).toBeInstanceOf(Array);
     expect(result.length).toBe(2);
     expect(result[0].length).toBe(5);
+    expect(result[1].length).toBe(5);
+
+    expect(result).toEqual([
+      [1, 2, 3, 4, 5],
+      [6, 7, 8, 9, 10]
+    ]);
   });
 
   it('throws an error for invalid input', () => {

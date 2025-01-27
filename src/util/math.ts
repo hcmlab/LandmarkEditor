@@ -10,9 +10,14 @@ import type { Matrix } from '@mediapipe/tasks-vision';
 export const math = create(all);
 
 export function reshape(matrix: Matrix): number[][] {
-  return Array(matrix.rows)
-    .fill(0)
-    .map((_, i) => matrix.data.slice(i * matrix.rows, (i + 1) * matrix.columns));
+  if (!matrix || !Array.isArray(matrix.data)) {
+    throw new Error('Invalid matrix input');
+  }
+  if (matrix.data.length < matrix.rows * matrix.columns) {
+    throw new Error('Invalid requested invalid shape');
+  }
+  const { rows, columns, data } = matrix;
+  return Array.from({ length: rows }, (_, i) => data.slice(i * columns, (i + 1) * columns));
 }
 
 export function reverse(matrix: MathMatrix | MathArray): MathMatrix {
