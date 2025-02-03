@@ -198,7 +198,9 @@ describe('FileAnnotationHistory', () => {
   });
 
   it('throws error from missing SHA in fromJson', () => {
-    const json = [[{ id: 1, x: 0, y: 0, z: 0, deleted: false }]];
+    const json: GraphData = {
+      points: [[{ id: 1, x: 0, y: 0, z: 0, deleted: false }]]
+    };
     expect(() => FileAnnotationHistory.fromJson(json, mockData, newObject)).toThrow(
       'Missing sha from API!'
     );
