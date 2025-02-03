@@ -74,6 +74,10 @@ export class Point2D {
     return this._x;
   }
 
+  set x(new_x) {
+    this._x = new_x;
+  }
+
   protected _y: number;
 
   /**
@@ -82,6 +86,10 @@ export class Point2D {
    */
   get y(): number {
     return this._y;
+  }
+
+  set y(new_y) {
+    this._y = new_y;
   }
 
   /**

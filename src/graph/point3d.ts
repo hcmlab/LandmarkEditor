@@ -31,6 +31,10 @@ export class Point3D extends Point2D {
     return this._z;
   }
 
+  set z(new_z) {
+    this._z = new_z;
+  }
+
   /**
    * Returns a string representation of the 3D point.
    * @returns - A formatted string with point details.

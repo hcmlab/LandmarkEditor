@@ -130,7 +130,7 @@ export class FileAnnotationHistory<T extends Point2D> {
       return null;
     }
     const sha = json.sha256;
-    if (!sha) throw new Error('Missing from API!');
+    if (!sha) throw new Error('Missing sha from API!');
     if (sha !== file.center?.image.sha) throw new Error('Mismatching sha sent from API!');
     let graphs = json.points;
     if (!graphs) throw new Error("Didn't get any points from API!");
@@ -287,8 +287,11 @@ export class FileAnnotationHistory<T extends Point2D> {
     orientation: Orientation
   ) {
     const orientation_id = FileAnnotationHistory.orientationToIndex(orientation);
-    const other =
-      this.__history[orientation_id][this._currentHistoryIndex[orientation_id]].getById(point_id);
+    const h = this.__history[orientation_id][this._currentHistoryIndex[orientation_id]];
+    if (h === undefined) {
+      return;
+    }
+    const other = h.getById(point_id);
 
     if (!other) {
       console.error(

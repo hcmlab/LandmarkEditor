@@ -47,9 +47,13 @@ export class Graph<P extends Point2D> {
           dict.id,
           findNeighbourPointIds(dict.id, FaceLandmarker.FACE_LANDMARKS_TESSELATION, 1)
         );
-        // @ts-expect-error: built in method uses readonly
-        delete dict['id'];
-        return Object.assign(point, dict);
+        // Manually assign properties from dict to point
+        Object.keys(dict).forEach((key) => {
+          if (key !== 'id') {
+            (point as unknown as Record<string, unknown>)[key] = dict[key as keyof PointData];
+          }
+        });
+        return point;
       })
     );
   }
@@ -118,7 +122,7 @@ export class Graph<P extends Point2D> {
 
   /**
    * Creates a shallow copy of the graph.
-   * @returns {Graph<P>} - A new Graph instance with cloned points.
+   * @returns - A new Graph instance with cloned points.
    */
   clone(): Graph<P> {
     // @ts-expect-error: converting Points to abstract class

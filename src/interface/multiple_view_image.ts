@@ -15,27 +15,27 @@ export class MultipleViewImage {
   }
 
   public get selectedFile(): File | undefined {
-    if (this.selected === Orientation.left) {
-      return this.left?.image.filePointer;
-    }
-    if (this.selected === Orientation.center) {
-      return this.center?.image.filePointer;
-    }
-    if (this.selected === Orientation.right) {
-      return this.right?.image.filePointer;
+    switch (this.selected) {
+      case Orientation.left:
+        return this.left?.image.filePointer;
+      case Orientation.center:
+        return this.center?.image.filePointer;
+      case Orientation.right:
+        return this.right?.image.filePointer;
     }
     return undefined;
   }
 
   public get selectedGuess(): orientationGuessResult | null {
-    if (this.selected === Orientation.left) {
-      return this.left;
-    }
-    if (this.selected === Orientation.center) {
-      return this.center;
-    }
-    if (this.selected === Orientation.right) {
-      return this.right;
+    switch (this.selected) {
+      case Orientation.center:
+        return this.center;
+      case Orientation.left:
+        return this.left;
+      case Orientation.right:
+        return this.right;
+      case Orientation.unknown:
+        return null;
     }
     return null;
   }
