@@ -18,30 +18,7 @@ import type { MultipleViewImage } from '@/interface/multiple_view_image';
  */
 export class MediapipeModel implements ModelApi<Point3D> {
   private meshLandmarker: FaceLandmarker | null = null;
-
-  /**
-   * Creates a new MediapipeModel instance.
-   */
-  constructor() {
-    FilesetResolver.forVisionTasks(
-      'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
-    )
-      .then((filesetResolver) =>
-        FaceLandmarker.createFromOptions(filesetResolver, {
-          baseOptions: {
-            modelAssetPath:
-              'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
-            // When adding user model of same type -> modelAssetBuffer
-            delegate: 'CPU'
-          },
-          minFaceDetectionConfidence: 0.3,
-          minFacePresenceConfidence: 0.3,
-          runningMode: 'IMAGE',
-          numFaces: 1
-        })
-      )
-      .then((landmarker) => (this.meshLandmarker = landmarker));
-  }
+  private readonly imageContainer = new Image();
 
   static processResult(result: FaceLandmarkerResult) {
     const graphs = result.faceLandmarks
@@ -71,13 +48,49 @@ export class MediapipeModel implements ModelApi<Point3D> {
     return null;
   }
 
-  async detect(imageFile: MultipleViewImage): Promise<FileAnnotationHistory<Point3D>> {
-    return new Promise<FileAnnotationHistory<Point3D>>((resolve, reject) => {
-      if (!imageFile.center) return;
+  async detect(imageFile: MultipleViewImage): Promise<FileAnnotationHistory<Point3D> | null> {
+    if (!imageFile.center) {
+      console.error('Tried to run detection on nonexistent view');
+      return null;
+    }
 
-      const image = new Image();
-      image.onload = (_) => {
-        const result = this.meshLandmarker?.detect(image);
+    const file = imageFile.selectedFile;
+    if (!file) {
+      console.error('Tried to run detection on nonexistent view');
+      return null;
+    }
+
+    const left_file = imageFile.left?.image.filePointer;
+    const center_file = imageFile.center.image.filePointer;
+    const right_file = imageFile.right?.image.filePointer;
+
+    let left_graph = undefined,
+      center_graph = undefined,
+      right_graph = undefined;
+
+    if (left_file) {
+      left_graph = await this.graphFromImage(left_file);
+    }
+    if (center_file) {
+      center_graph = await this.graphFromImage(center_file);
+    }
+    if (right_file) {
+      right_graph = await this.graphFromImage(right_file);
+    }
+    return FileAnnotationHistory.FromDetection(imageFile, left_graph, center_graph, right_graph);
+  }
+
+  private async graphFromImage(imageFile: File): Promise<Graph<Point3D> | undefined> {
+    if (this.meshLandmarker === null) {
+      await this.getModelData();
+      if (!this.meshLandmarker) {
+        console.error('Failed to obtain model data');
+        return undefined;
+      }
+    }
+    return new Promise<Graph<Point3D>>((resolve, reject) => {
+      this.imageContainer.onload = (_) => {
+        const result = this.meshLandmarker?.detect(this.imageContainer);
         if (!result) {
           reject(new Error('Face(s) could not be detected!'));
           return;
@@ -87,14 +100,31 @@ export class MediapipeModel implements ModelApi<Point3D> {
           reject(new Error('Face(s) could not be detected!'));
           return;
         }
-        const h = new FileAnnotationHistory<Point3D>(imageFile);
-        h.add(graph);
-        resolve(h);
+        resolve(graph);
       };
-      imageFromFile(imageFile.center.image.filePointer).then((img) => {
-        image.src = img;
+      imageFromFile(imageFile).then((img) => {
+        this.imageContainer.src = img;
       });
     });
+  }
+
+  private async getModelData() {
+    this.meshLandmarker = await FilesetResolver.forVisionTasks(
+      'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
+    ).then((filesetResolver) =>
+      FaceLandmarker.createFromOptions(filesetResolver, {
+        baseOptions: {
+          modelAssetPath:
+            'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
+          // When adding user model of same type -> modelAssetBuffer
+          delegate: 'CPU'
+        },
+        minFaceDetectionConfidence: 0.3,
+        minFacePresenceConfidence: 0.3,
+        runningMode: 'IMAGE',
+        numFaces: 1
+      })
+    );
   }
 
   async uploadAnnotations(_: AnnotationData): Promise<void | Response> {

@@ -7,23 +7,23 @@ const annotationHistoryStore = useAnnotationHistoryStore();
 const modelStore = useModelStore();
 
 function undo(): boolean {
-  annotationHistoryStore.selectedHistory?.previous();
+  annotationHistoryStore.selected()?.previous();
   return false;
 }
 
 function redo(): boolean {
-  annotationHistoryStore.selectedHistory?.next();
+  annotationHistoryStore.selected()?.next();
   return false;
 }
 
 function reset(): boolean {
-  annotationHistoryStore.selectedHistory?.clear();
+  annotationHistoryStore.selected()?.clear();
   runDetection();
   return false;
 }
 
 function runDetection() {
-  const history = annotationHistoryStore.selectedHistory;
+  const history = annotationHistoryStore.selected();
   if (!history) return;
   if (!history.file.center) return;
   modelStore.model?.detect(history.file).then((graphs) => {

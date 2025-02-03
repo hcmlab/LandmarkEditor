@@ -42,6 +42,20 @@ export class FileAnnotationHistory<T extends Point2D> {
     this._status = SaveStatus.unedited;
   }
 
+  public static FromDetection<T extends Point2D>(
+    file: MultipleViewImage,
+    left: Graph<T> | undefined,
+    center: Graph<T> | undefined,
+    right: Graph<T> | undefined
+  ) {
+    const h = new FileAnnotationHistory<T>(file);
+    if (left) h.__history[FileAnnotationHistory.orientationToIndex(Orientation.left)][0] = left;
+    if (center)
+      h.__history[FileAnnotationHistory.orientationToIndex(Orientation.center)][0] = center;
+    if (right) h.__history[FileAnnotationHistory.orientationToIndex(Orientation.right)][0] = right;
+    return h;
+  }
+
   private static orientationToIndex(orientation: Orientation) {
     switch (orientation) {
       case Orientation.center:
@@ -150,17 +164,21 @@ export class FileAnnotationHistory<T extends Point2D> {
    * @param {Graph<T>} item - The graph of points representing the annotation.
    */
   add(item: Graph<T>): void {
-    if (this.currentHistoryIndex + 1 < this.history.length) {
+    this._add(item, FileAnnotationHistory.orientationToIndex(this.file.selected));
+  }
+
+  private _add(item: Graph<T>, orientationId: number) {
+    if (this._currentHistoryIndex[orientationId] + 1 < this.__history[orientationId].length) {
       // Delete history stack when moved back and changed something
-      this._history.length = this.currentHistoryIndex + 1;
+      this.__history[orientationId].length = this._currentHistoryIndex[orientationId] + 1;
     }
     // only act if a size is provided see Issue #70
-    if (this.cacheSize !== 0 && this.cacheSize === this._history.length) {
+    if (this.cacheSize !== 0 && this.cacheSize === this.__history[orientationId].length) {
       // Remove the first item as it is too old and cache limit is reached
-      this._history.shift();
+      this.__history[orientationId].shift();
     }
-    this._history.push(item.clone());
-    this.currentHistoryIndex = this._history.length - 1;
+    this.__history[orientationId].push(item.clone());
+    this._currentHistoryIndex[orientationId] = this.__history[orientationId].length - 1;
   }
 
   /**
@@ -168,13 +186,16 @@ export class FileAnnotationHistory<T extends Point2D> {
    * Expects the latest item at the last index (-1)
    *
    * @param items - An array of Graph items to be merged.
+   * @param orientation_id - the id of the orientation to be merged
    */
-  merge(items: Graph<T>[]) {
-    items.forEach((item) => this.add(item));
+  merge(items: FileAnnotationHistory<T>, orientation_id: number) {
+    items.__history[orientation_id].forEach((item) => this._add(item, orientation_id));
   }
 
   append(other: FileAnnotationHistory<T>) {
-    this.merge(other.history);
+    this.merge(other, FileAnnotationHistory.orientationToIndex(Orientation.left));
+    this.merge(other, FileAnnotationHistory.orientationToIndex(Orientation.center));
+    this.merge(other, FileAnnotationHistory.orientationToIndex(Orientation.right));
   }
 
   /**
@@ -230,8 +251,8 @@ export class FileAnnotationHistory<T extends Point2D> {
    * Clears the entire history.
    */
   clear() {
-    this._history = [];
-    this.currentHistoryIndex = 0;
+    this.__history = [[], [], []];
+    this._currentHistoryIndex = [0, 0, 0];
     this._status = SaveStatus.unedited;
   }
 
