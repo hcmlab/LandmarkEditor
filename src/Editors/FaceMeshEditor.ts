@@ -12,7 +12,6 @@ import { useAnnotationHistoryStore } from '@/stores/annotationHistoryStore';
 import { Editor } from '@/Editors/Editor';
 import { SaveStatus } from '@/enums/saveStatus';
 import { AnnotationTool } from '@/enums/annotationTool';
-import { Orientation } from '@/enums/orientation';
 import { Point3D } from '@/graph/point3d';
 import { Point2D } from '@/graph/point2d';
 
@@ -159,38 +158,7 @@ export class FaceMeshEditor extends Editor {
       return;
     }
 
-    const orientation = history.file.selected;
-
-    /*
-      obtain the transformation matrix for the currently manually modified image.
-      This matrix transforms the coordinates for the selected image to an arbitrary coordinate space.
-      Apply the inverse matrix of the other images to the resulting coordinates,
-      to obtain the original position on the other images.
-    */
-    let matrix = null;
-    switch (orientation) {
-      case Orientation.left:
-        matrix = history.file.left?.transformationMatrix;
-        break;
-      case Orientation.center:
-        matrix = history.file.center?.transformationMatrix;
-        break;
-      case Orientation.right:
-        matrix = history.file.right?.transformationMatrix;
-        break;
-      default:
-        console.error(
-          `Orientation not found for selected history: ${history.file.selectedFile?.name}`
-        );
-        return;
-    }
-
-    if (!matrix) {
-      console.error(`No matrix generated for selected history: ${history.file.selectedFile?.name}`);
-      return;
-    }
-
-    history.updateFromMatrix(matrix, pointsToUpdate);
+    history.updateOtherPerspectives(pointsToUpdate);
   }
 
   onPan(_: number, __: number): void {
@@ -276,7 +244,10 @@ export class FaceMeshEditor extends Editor {
   private drawPoint(point: Point3D): void {
     if (point && !point.deleted) {
       const projectedPoint = Perspective.project(Editor.image, point);
-
+      /* Debug helper
+      Editor.ctx.font = 20 / Editor.zoomScale + 'px serif';
+      Editor.ctx.fillText(String(point.id), projectedPoint.x, projectedPoint.y);
+      */
       if (point.hovered || point.selected) {
         const color = point.hovered ? COLOR_POINT_HOVERED : COLOR_POINT_SELECTED;
         Editor.drawCircleAtPoint(
@@ -305,10 +276,11 @@ export class FaceMeshEditor extends Editor {
     connections: Connection[],
     color: string | CanvasGradient | CanvasPattern
   ): void {
-    const graph = this.annotationHistoryStore.selected()?.get();
-    if (!graph) {
-      return;
-    }
+    const h = this.annotationHistoryStore.selected();
+    if (!h) return;
+    const graph = h.get();
+    if (!graph) return;
+
     const pointPairs = connections.map((connection) => {
       return {
         start: graph.getById(connection.start),
@@ -340,3 +312,5 @@ export class FaceMeshEditor extends Editor {
     });
   }
 }
+// TODO: when moving side images translate the coordinates to the image coordinate system with the matrix
+// TODO: only render points which are in foreground

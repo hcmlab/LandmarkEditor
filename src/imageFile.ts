@@ -7,13 +7,15 @@ import { calculateSHA } from '@/util/sha';
 export class ImageFile {
   readonly filePointer: File;
   sha: string = '';
+  width: number = 0;
+  height: number = 0;
 
   private constructor(file: File, sha: string) {
     this.filePointer = file;
     this.sha = sha;
   }
 
-  static async create(file: File) {
+  static async create(file: File): Promise<ImageFile> {
     const sha = calculateSHA(file).then(
       (sha) => sha,
       (error) => {

@@ -32,54 +32,75 @@ const mockData = {
   selected: Orientation.center
 } as MultipleViewImage;
 
-const expandedMockData = {
-  center: {
-    image: {
-      mockDataPointer: new File([''], 'mock.png', {
-        type: 'image/png'
-      }),
-      sha: 'mockSha'
-    },
-    mesh: [],
-    transformationMatrix: math.matrix([
-      [1, 0, 0, 0],
-      [0, 1, 0, 0],
-      [0, 0, 1, 0],
-      [0, 0, 0, 1]
-    ])
+const expandedMockData = new MultipleViewImage();
+expandedMockData.center = {
+  image: {
+    mockDataPointer: new File([''], 'mock.png', {
+      type: 'image/png'
+    }),
+    sha: 'mockSha'
   },
-  left: {
-    image: {
-      mockDataPointer: new File([''], 'mock.png', {
-        type: 'image/png'
-      }),
-      sha: 'mockSha'
-    },
-    mesh: [],
-    transformationMatrix: math.matrix([
-      [0, 0, 1, 0],
-      [0, 1, 0, 0],
-      [-1, 0, 0, 0],
-      [0, 0, 0, 1]
-    ])
+  mesh: [],
+  transformationMatrix: math.matrix([
+    [1, 0, 0, 0],
+    [0, 1, 0, 0],
+    [0, 0, 1, 0],
+    [0, 0, 0, 1]
+  ]),
+  revTransformationMatrix: math.matrix([
+    [1, 0, 0, 0],
+    [0, 1, 0, 0],
+    [0, 0, 1, 0],
+    [0, 0, 0, 1]
+  ])
+};
+expandedMockData.left = {
+  image: {
+    mockDataPointer: new File([''], 'mock.png', {
+      type: 'image/png'
+    }),
+    sha: 'mockSha'
   },
-  right: {
-    image: {
-      mockDataPointer: new File([''], 'mock.png', {
-        type: 'image/png'
-      }),
-      sha: 'mockSha'
-    },
-    mesh: [],
-    transformationMatrix: math.matrix([
-      [0, 0, -1, 0],
-      [0, 1, 0, 0],
-      [1, 0, 0, 0],
-      [0, 0, 0, 1]
-    ])
+  mesh: [],
+  transformationMatrix: math.matrix([
+    [0, 0, -1, 0],
+    [0, 1, 0, 0],
+    [1, 0, 0, 0],
+    [0, 0, 0, 1]
+  ]),
+  // The reverse is set to the unit matrix, else the values from the other perspective can't be tested,
+  // since the reverse projection will result in simple addition of the coordinates
+  revTransformationMatrix: math.matrix([
+    [1, 0, 0, 0],
+    [0, 1, 0, 0],
+    [0, 0, 1, 0],
+    [0, 0, 0, 1]
+  ])
+};
+expandedMockData.right = {
+  image: {
+    mockDataPointer: new File([''], 'mock.png', {
+      type: 'image/png'
+    }),
+    sha: 'mockSha'
   },
-  selected: Orientation.center
-} as MultipleViewImage;
+  mesh: [],
+  transformationMatrix: math.matrix([
+    [0, 0, 1, 0],
+    [0, 1, 0, 0],
+    [-1, 0, 0, 0],
+    [0, 0, 0, 1]
+  ]),
+  // The reverse is set to the unit matrix, else the values from the other perspective can't be tested,
+  // since the reverse projection will result in simple addition of the coordinates
+  revTransformationMatrix: math.matrix([
+    [1, 0, 0, 0],
+    [0, 1, 0, 0],
+    [0, 0, 1, 0],
+    [0, 0, 0, 1]
+  ])
+};
+expandedMockData.selected = Orientation.center;
 
 const newObject = (id: number, neighbors: number[]) => new Point2D(id, 0, 0, neighbors);
 
@@ -230,12 +251,6 @@ describe('FileAnnotationHistory', () => {
 
   it('updates from matrix correctly', () => {
     const history = new FileAnnotationHistory<Point3D>(expandedMockData, 10);
-    const matrix = math.matrix([
-      [1, 0, 0, 0],
-      [0, 1, 0, 0],
-      [0, 0, 1, 0],
-      [0, 0, 0, 1]
-    ]);
 
     /*
     x,y and z axis on the center image are the source axis.
@@ -282,12 +297,12 @@ describe('FileAnnotationHistory', () => {
       1,
       test_point.x + move_point.z,
       test_point.y + move_point.y,
-      test_point.z - move_point.x,
+      -test_point.z - move_point.x,
       []
     ); // dest
     const dest_point_left = new Point3D(
       1,
-      test_point.x - move_point.z,
+      -test_point.x - move_point.z,
       test_point.y + move_point.y,
       test_point.z + move_point.x,
       []
@@ -303,7 +318,9 @@ describe('FileAnnotationHistory', () => {
     history.file.selected = Orientation.center;
     history.add(graph);
 
-    history.updateFromMatrix(matrix, [move_point]);
+    history.file.selected = Orientation.center;
+
+    history.updateOtherPerspectives([move_point]);
 
     history.file.selected = Orientation.right;
     expect(history.get().points[0]).toEqual(dest_point_right);

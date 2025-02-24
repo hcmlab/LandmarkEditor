@@ -51,7 +51,7 @@ function setModel(model: ModelType): boolean {
           localStorage.setItem('apiUrl', url);
           const notificationText = $('#saveNotificationText');
           notificationText.text('Webservice url saved!');
-          annotationHistoryStore.histories.forEach((history) => {
+          annotationHistoryStore.histories().forEach((history) => {
             modelStore.model?.detect(history.file).then((graphs) => {
               if (graphs === null) {
                 return;

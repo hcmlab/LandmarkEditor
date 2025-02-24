@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { Perspective } from '../perspective';
 import { Point2D } from '../point2d';
+import { Point3D } from '../point3d';
 
 const HTMLImage = new Image();
 HTMLImage.height = 100;
@@ -59,6 +60,67 @@ describe('perspective2d', () => {
       expect(res).toEqual(new Point2D(1, 0.1, 0.1, []));
       expect(zeroRes).toEqual(new Point2D(2, 0, 0, []));
       expect(fullRes).toEqual(new Point2D(3, 1, 1, []));
+    });
+  });
+
+  describe('orderTrianglePoints', () => {
+    it('should order points in descending z-values', () => {
+      const p1 = new Point3D(1, 1, 0, 1, []);
+      const p2 = new Point3D(2, 0, 1, 0, []);
+      const p3 = new Point3D(3, -1, 0, -1, []);
+      const orderedPoints = Perspective.orderTrianglePoints([p1, p2, p3]);
+      expect(orderedPoints).toEqual([p1, p2, p3]);
+    });
+
+    it('should swap points to ensure descending z-values', () => {
+      const p1 = new Point3D(1, 0, 0, 1, []);
+      const p2 = new Point3D(2, 0, 1, -1, []);
+      const p3 = new Point3D(3, 1, 0, 0, []);
+      const orderedPoints = Perspective.orderTrianglePoints([p1, p2, p3]);
+      expect(orderedPoints).toEqual([p1, p3, p2]);
+    });
+  });
+
+  describe('calculateNormal', () => {
+    it('should calculate the normal vector of a triangle', () => {
+      const humanViewingDir = new Point3D(0, 0, 0, -0.5, []);
+      const p1 = new Point3D(1, 0, 0, 0, []);
+      const p2 = new Point3D(2, 1, 0, 0, []);
+      const p3 = new Point3D(3, 0, 1, 0, []);
+      const normal = Perspective.calculateNormal([p1, p2, p3], humanViewingDir);
+      expect(normal.x).toBeCloseTo(0);
+      expect(normal.y).toBeCloseTo(0);
+      expect(normal.z).toBeCloseTo(-1);
+    });
+  });
+
+  describe('isHidden', () => {
+    it('should return false if the point is hidden', () => {
+      const normal = new Point3D(1, 0, 0, 1, []);
+      const viewDirection = new Point3D(2, 0, 0, -1, []);
+      const hidden = Perspective.isVisible(normal, viewDirection);
+      expect(hidden).toBe(false);
+    });
+
+    it('should return true if the point is not hidden', () => {
+      const normal = new Point3D(1, 0, 0, 1, []);
+      const viewDirection = new Point3D(2, 0, 0, 1, []);
+      const hidden = Perspective.isVisible(normal, viewDirection);
+      expect(hidden).toBe(true);
+    });
+
+    it('should return false if the normal is 90 degrees off axis of the viewing direction', () => {
+      const normal = new Point3D(1, 0, 1, 0, []);
+      const viewDirection = new Point3D(2, 0, 0, 1, []);
+      const hidden = Perspective.isVisible(normal, viewDirection);
+      expect(hidden).toBe(false);
+    });
+
+    it('should return true if the normal is a little bit less then 90 degrees off axis of the viewing direction', () => {
+      const normal = new Point3D(1, 0, 1, 0.0000001, []);
+      const viewDirection = new Point3D(2, 0, 0, 1, []);
+      const hidden = Perspective.isVisible(normal, viewDirection);
+      expect(hidden).toBe(true);
     });
   });
 });

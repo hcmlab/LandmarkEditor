@@ -15,5 +15,8 @@
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "types": ["node", "jquery", "vitest/globals"],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   }
 }

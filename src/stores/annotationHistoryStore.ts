@@ -15,10 +15,10 @@ export const useAnnotationHistoryStore = defineStore({
   id: 'annotationHistory',
 
   state: (): {
-    histories: FileAnnotationHistory<Point3D>[];
+    _histories: FileAnnotationHistory<Point3D>[];
     selectedHistory: FileAnnotationHistory<Point3D> | null;
   } => ({
-    histories: [],
+    _histories: [],
     selectedHistory: null
   }),
 
@@ -36,16 +36,16 @@ export const useAnnotationHistoryStore = defineStore({
         // Todo - error message
         throw new Error('Failed to detect history from the Graph API.');
       }
-      this.histories.push(history);
+      this._histories.push(history);
       if (!this.selectedHistory) {
         this.selectedHistory = history;
       }
     },
     empty(): boolean {
-      return this.histories?.length <= 0;
+      return this._histories?.length <= 0;
     },
     find(fileName: string, sha256: string): FileAnnotationHistory<Point3D> {
-      return this.histories.find(
+      return this._histories.find(
         (history) =>
           (history.file.left?.image.filePointer.name === fileName &&
             history.file.left.image.sha === sha256) ||
@@ -80,10 +80,10 @@ export const useAnnotationHistoryStore = defineStore({
           h.add(graph);
         }
         h.file.selected = Orientation.center;
-        this.histories.push(h as FileAnnotationHistory<Point3D>); // NOSONAR - false positive. Else this will be marked as an error by Chrome.
+        this._histories.push(h as FileAnnotationHistory<Point3D>); // NOSONAR - false positive. Else this will be marked as an error by Chrome.
       });
       if (!this.selectedHistory) {
-        this.selectedHistory = this.histories[0];
+        this.selectedHistory = this._histories[0];
       }
     },
 
@@ -91,13 +91,16 @@ export const useAnnotationHistoryStore = defineStore({
      * Returns any files with pending changes
      */
     getUnsaved(): FileAnnotationHistory<Point3D>[] {
-      return this.histories.filter(
+      return this._histories.filter(
         (file) => file.status === SaveStatus.saved
       ) as FileAnnotationHistory<Point3D>[];
     },
 
     selected(): FileAnnotationHistory<Point3D> | null {
       return this.selectedHistory as FileAnnotationHistory<Point3D> | null;
+    },
+    histories(): FileAnnotationHistory<Point3D>[] {
+      return this.histories as unknown as FileAnnotationHistory<Point3D>[]; // NOSONAR - false positive. Else this will be marked as an error by Chrome.
     },
 
     /**
@@ -111,7 +114,7 @@ export const useAnnotationHistoryStore = defineStore({
      */
     collectAnnotations(): AnnotationData {
       const result: AnnotationData = {};
-      this.histories.forEach((h) => {
+      this._histories.forEach((h) => {
         if (h.status === SaveStatus.unedited) {
           return;
         }

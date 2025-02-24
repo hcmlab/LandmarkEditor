@@ -17,9 +17,9 @@ describe('reshape', () => {
     expect(result[1].length).toBe(4);
     expect(result[2].length).toBe(4);
     expect(result).toEqual([
-      [1, 2, 3, 4],
-      [5, 6, 7, 8],
-      [9, 10, 11, 12]
+      [1, 4, 7, 10],
+      [2, 5, 8, 11],
+      [3, 6, 9, 12]
     ]);
   });
 
@@ -36,8 +36,8 @@ describe('reshape', () => {
     expect(result[1].length).toBe(5);
 
     expect(result).toEqual([
-      [1, 2, 3, 4, 5],
-      [6, 7, 8, 9, 10]
+      [1, 3, 5, 7, 9],
+      [2, 4, 6, 8, 10]
     ]);
   });
 
@@ -83,10 +83,10 @@ describe('reverse', () => {
       [0, 0, 0, 1]
     ]);
     const translationMatrix = math.matrix([
-      [1, 0, 0, 0],
-      [0, 1, 0, 0],
-      [0, 0, 1, 0],
-      [1, 2, 3, 1]
+      [1, 0, 0, 1],
+      [0, 1, 0, 2],
+      [0, 0, 1, 3],
+      [0, 0, 0, 1]
     ]);
     const scalingMatrix = math.matrix([
       [2, 0, 0, 0],
@@ -106,10 +106,10 @@ describe('reverse', () => {
     const trans_rev = reverse(translationMatrix);
     expect(trans_rev).toBeDefined();
     expect(trans_rev.toArray()).toEqual([
-      [1, 0, 0, 0],
-      [0, 1, 0, 0],
-      [0, 0, 1, 0],
-      [-1, -2, -3, 1]
+      [1, 0, 0, -1],
+      [0, 1, 0, -2],
+      [0, 0, 1, -3],
+      [0, 0, 0, 1]
     ]);
     const scale_rev = reverse(scalingMatrix);
     expect(scale_rev).toBeDefined();

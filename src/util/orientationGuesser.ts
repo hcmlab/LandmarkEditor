@@ -2,15 +2,22 @@ import { FaceLandmarker, FilesetResolver, type NormalizedLandmark } from '@media
 import { Matrix } from 'mathjs';
 import { Orientation } from '@/enums/orientation';
 import type { ImageFile } from '@/imageFile';
-import { math, reshape } from '@/util/math';
+import { math, reshape, reverse } from '@/util/math';
+import { Point3D } from '@/graph/point3d';
 
 export type orientationGuessResult = {
+  /** the image that was guessed */
   image: ImageFile;
+  /** The orientation of the image */
   orientation: Orientation;
+  /** The viewing direction of the person in the image */
+  viewingDir: Point3D;
+  /** The mesh of the face */
   mesh: NormalizedLandmark[];
+  /** The transformation matrix from absolute pixel points to positions in 3D space */
   transformationMatrix: Matrix;
-  width: number;
-  height: number;
+  /** The reverse of the transformation matrix, to save computation time */
+  revTransformationMatrix: Matrix;
 };
 
 export async function guessOrientation(images: ImageFile[]): Promise<orientationGuessResult[]> {
@@ -21,24 +28,22 @@ export async function guessOrientation(images: ImageFile[]): Promise<orientation
       const data = await handleFile(image.filePointer);
       const res = tool.detect(data);
       const mesh = res.faceLandmarks[0];
-      const orientation = orientationFromMesh(mesh);
+      const [orientation, viewingDir] = orientationFromMesh(mesh);
       const transformationMatrix = math.matrix(reshape(res.facialTransformationMatrixes[0]));
-      const width = data.width;
-      const height = data.height;
       const result: orientationGuessResult = {
-        image,
-        orientation,
-        mesh,
-        transformationMatrix,
-        width,
-        height
+        image: image,
+        orientation: orientation as Orientation,
+        viewingDir: viewingDir as Point3D,
+        mesh: mesh,
+        transformationMatrix: transformationMatrix,
+        revTransformationMatrix: reverse(transformationMatrix)
       };
       return result;
     })
   );
 }
 
-function getMeshAnnotationTool() {
+async function getMeshAnnotationTool() {
   return FilesetResolver.forVisionTasks(
     'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
   ).then((filesetResolver) =>
@@ -70,7 +75,7 @@ function orientationFromMesh(mesh: NormalizedLandmark[]) {
   }
 
   if (!noseTip || !leftNose || !rightNose) {
-    return Orientation.unknown;
+    return [Orientation.unknown, new Point3D(-1, 0, 0, 0, [])];
   }
 
   // MIDSECTION OF NOSE IS BACK OF NOSE PERPENDICULAR
@@ -91,20 +96,40 @@ function orientationFromMesh(mesh: NormalizedLandmark[]) {
   180: facing away to the RIGHT from the camera POV
   */
 
+  const directionVector = {
+    x: noseTip.x - midpoint.x,
+    y: noseTip.y - midpoint.y,
+    z: noseTip.z - midpoint.z
+  };
+
+  const magnitude = Math.sqrt(
+    directionVector.x * directionVector.x +
+      directionVector.y * directionVector.y +
+      directionVector.z * directionVector.z
+  );
+
+  const normalizedVector = {
+    x: directionVector.x / magnitude,
+    y: directionVector.y / magnitude,
+    z: directionVector.z / magnitude
+  };
+
+  const point = new Point3D(-1, normalizedVector.x, normalizedVector.y, normalizedVector.z, []);
+
   // Todo - check what happens [180, 360]
   if (turn < 60) {
-    return Orientation.left;
+    return [Orientation.left, point];
   }
 
   if (turn > 120) {
-    return Orientation.right;
+    return [Orientation.right, point];
   }
 
   if (turn >= 60 && turn <= 120) {
-    return Orientation.center;
+    return [Orientation.center, point];
   }
 
-  return Orientation.unknown;
+  return [Orientation.unknown, point];
 }
 
 function getAngleBetweenLines(

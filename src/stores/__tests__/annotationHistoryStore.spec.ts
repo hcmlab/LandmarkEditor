@@ -54,7 +54,7 @@ test('Test adding', async () => {
   const store = useAnnotationHistoryStore();
   await store.add(mockFile.center.image.filePointer, mockApi);
 
-  expect(store.histories.length).toEqual(1);
+  expect(store._histories.length).toEqual(1);
   expect(store.selectedHistory).not.toBeNull();
 });
 
@@ -64,7 +64,7 @@ test('Test find function', async () => {
 
   const found = store.find(
     mockFile.center.image.filePointer.name,
-    store.histories[0].file.center.image.sha
+    store._histories[0].file.center.image.sha
   );
   expect(found).toEqual(store.selectedHistory);
 });
@@ -72,7 +72,7 @@ test('Test find function', async () => {
 test('Check the elements in the state', () => {
   const store = useAnnotationHistoryStore();
 
-  const expectedKeys = ['histories', 'selectedHistory'];
+  const expectedKeys = ['_histories', 'selectedHistory'];
   const actualKeys = Object.keys(store.$state);
 
   expect(actualKeys.length).toBe(expectedKeys.length);

@@ -10,11 +10,11 @@ import type { MultipleViewImage } from '@/interface/multiple_view_image';
 
 const annotationHistoryStore = useAnnotationHistoryStore();
 const modelStore = useModelStore();
-const histories = ref(useAnnotationHistoryStore().histories);
+const histories = ref(useAnnotationHistoryStore()._histories);
 
 function selectThumbnail(file: MultipleViewImage): void {
   /* clicking to save */
-  const oldHistory = annotationHistoryStore.selectedHistory;
+  const oldHistory = annotationHistoryStore.selected();
   const selected = file.center?.image;
   if (!selected) return;
   if (

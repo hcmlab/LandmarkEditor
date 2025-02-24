@@ -1,11 +1,11 @@
-import { type MathNumericType, type Matrix } from 'mathjs';
+import { type Matrix } from 'mathjs';
 import { Point2D } from '@/graph/point2d';
 import { Graph } from '@/graph/graph';
 import { SaveStatus } from '@/enums/saveStatus';
 
 import type { MultipleViewImage } from '@/interface/multiple_view_image';
 import { Orientation } from '@/enums/orientation';
-import { math, reverse } from '@/util/math';
+import { math, normalizeVector } from '@/util/math';
 
 export interface PointData {
   deleted: boolean;
@@ -265,30 +265,54 @@ export class FileAnnotationHistory<T extends Point2D> {
 
   /**
    * Updates the points in the history of the specified orientation using the given absolute point and perspective matrix.
-   * @param matrix - The perspective matrix of the manually modified image.
    * @param points - The array of movement to update in other images. Already update in the source image.
    */
-  public updateFromMatrix(matrix: Matrix, points: T[]) {
+  public updateOtherPerspectives(points: T[]) {
     const orientation = this.file.selected;
-    const inv_matrices: { [key in Orientation]?: Matrix } = {};
+    if (!points || points.length === 0) {
+      return;
+    }
+    if (orientation == Orientation.unknown) {
+      throw new Error('Unknown orientation');
+    }
+    const matrices: { [key in Orientation]?: [Matrix, Matrix] } = {};
 
     if (orientation !== Orientation.left && this.file.left) {
-      inv_matrices[Orientation.left] = reverse(this.file.left.transformationMatrix);
+      matrices[Orientation.left] = [
+        this.file.left.transformationMatrix,
+        this.file.left.revTransformationMatrix
+      ];
     }
     if (orientation !== Orientation.center && this.file.center) {
-      inv_matrices[Orientation.center] = reverse(this.file.center.transformationMatrix);
+      matrices[Orientation.center] = [
+        this.file.center.transformationMatrix,
+        this.file.center.revTransformationMatrix
+      ];
     }
     if (orientation !== Orientation.right && this.file.right) {
-      inv_matrices[Orientation.right] = reverse(this.file.right.transformationMatrix);
+      matrices[Orientation.right] = [
+        this.file.right.transformationMatrix,
+        this.file.right.revTransformationMatrix
+      ];
+    }
+
+    console.log(this._file.selectedGuess());
+    const point_matrix = this._file.selectedGuess()?.transformationMatrix;
+    if (!point_matrix) {
+      throw new Error('No transformation matrix found');
     }
 
     points.forEach((point) => {
-      let abs_move = math.multiply(matrix, point.matrix);
-      abs_move = math.divide(abs_move, abs_move.get([3])) as Matrix<MathNumericType>;
-
-      Object.entries(inv_matrices).forEach(([orient, inv_matrix]) => {
-        if (inv_matrix) {
-          this.updatePerspectiveFromMatrix(point.id, abs_move, inv_matrix, orient as Orientation);
+      point.matrix = normalizeVector(
+        math.multiply(
+          math.subset(point_matrix, math.index([0, 1, 2], 3), [[0], [0], [0]]),
+          point.matrix.clone()
+        )
+      );
+      console.log(point);
+      Object.entries(matrices).forEach(([orient, [matrix, rev_matrix]]) => {
+        if (matrix) {
+          this.updatePerspectiveFromMatrix(point, matrix, rev_matrix, orient as Orientation);
         }
       });
     });
@@ -296,35 +320,48 @@ export class FileAnnotationHistory<T extends Point2D> {
 
   /**
    * Updates the point at the given id in the history of the specified orientation using the given absolute point and perspective matrix.
-   * @param point_id the id of the point to update
-   * @param abs_move the relative movement inside the absolute coordinate space
-   * @param matrix the perspective matrix to convert the movement to the perspective of the other image
+   * @param point the point to be updated
+   * @param matrix the matrix that describes the translation onto the other face
+   * @param rev_matrix the reverse of the other matrix
    * @param orientation the orientation to update
    */
   private updatePerspectiveFromMatrix(
-    point_id: number,
-    abs_move: Matrix,
+    point: T,
     matrix: Matrix,
+    rev_matrix: Matrix,
     orientation: Orientation
   ) {
     const orientation_id = FileAnnotationHistory.orientationToIndex(orientation);
-    const h = this.__history[orientation_id][this._currentHistoryIndex[orientation_id]];
-    if (h === undefined) {
-      return;
+    const g = this.__history[orientation_id][this._currentHistoryIndex[orientation_id]];
+    if (g === undefined) {
+      throw new Error("Can't find the graph to update");
     }
-    const other = h.getById(point_id);
+    const other = g.getById(point.id);
 
     if (!other) {
       console.error(
-        `Couldn't find corresponding point (id=${point_id}) in other perspective (orientation: ${orientation})`
+        `Couldn't find corresponding point (id=${point.id}) in other perspective (orientation: ${orientation})`
       );
       return;
     }
+    const move = math.multiply(
+      math.subset(matrix, math.index([0, 1, 2], 3), [[0], [0], [0]]),
+      point.matrix.clone()
+    );
+    let other_transposed = math.multiply(matrix, other.matrix.clone()); // Transpose other to other perspective
+    other_transposed = normalizeVector(other_transposed);
 
-    let move = math.multiply(matrix, abs_move);
-    move = math.divide(move, move.get([3])) as Matrix<MathNumericType>;
-    const move_pt = other.clone() as T;
-    move_pt.matrix = move;
-    other.add(move_pt);
+    other_transposed = math.subset(
+      other_transposed,
+      math.index([0, 1, 2]),
+      math.add(
+        math.subset(other_transposed, math.index([0, 1, 2])),
+        math.subset(move, math.index([0, 1, 2]))
+      )
+    ); // Add the movement
+    console.log(other_transposed);
+    other_transposed = math.multiply(rev_matrix, other_transposed); // Convert back to original perspective
+    other.matrix = normalizeVector(other_transposed);
+    g.points[other.id] = other;
   }
 }

@@ -9,15 +9,16 @@ import { useAnnotationHistoryStore } from '../../../stores/annotationHistoryStor
 import { ImageFile } from '../../../imageFile';
 
 import { MultipleViewImage } from '../../../interface/multiple_view_image';
+import { Orientation } from '../../../enums/orientation';
 
 // Define a function to convert ArrayBuffer to Blob
 function arrayBufferToBlob(buffer: ArrayBuffer, type: string) {
   return new Blob([buffer], { type });
 }
 
-// Define a function to convert Blob to File
+// Define a function to convert Blob to File using the browser's File constructor
 function blobToFile(blob: Blob, name: string) {
-  return new File([blob], name);
+  return new File([blob], name, { type: blob.type });
 }
 
 const fileBuffer = fs.readFileSync('src/model/__tests__/testImage.png');
@@ -28,27 +29,29 @@ const arrayBuffer = Uint8Array.from(fileBuffer).buffer;
 // Create a Blob from the ArrayBuffer
 const blob = arrayBufferToBlob(arrayBuffer, 'text/plain');
 
+// Create a mock File object using the browser's File constructor
+const mockFile = blobToFile(blob, 'mock.png');
+
 // Mock data
-const mockData: MultipleViewImage = {
+const mockData = {
+  selected: Orientation.center,
   center: {
     image: {
-      file: new File([''], 'mock.png', {
-        type: 'image/png'
-      })
+      file: mockFile
     },
     mesh: []
   },
   left: null,
   right: null
-};
+} as MultipleViewImage;
 
 let store = null;
 
 beforeAll(async () => {
-  mockData.center.image = await ImageFile.create(blobToFile(blob, 'test.png'));
+  mockData.center.image = await ImageFile.create(mockFile);
   setActivePinia(createPinia());
   store = useAnnotationHistoryStore();
-  store.histories.push(new FileAnnotationHistory<Point2D>(mockData, 25));
+  store._histories.push(new FileAnnotationHistory<Point2D>(mockData, 25));
 });
 
 describe('ThumbnailGallery', () => {

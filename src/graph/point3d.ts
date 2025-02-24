@@ -1,4 +1,4 @@
-import type { Matrix } from 'mathjs';
+import { type Matrix } from 'mathjs';
 import { Point2D } from './point2d';
 import type { PointData } from '@/cache/fileAnnotationHistory';
 import { math } from '@/util/math';
