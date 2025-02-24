@@ -11,6 +11,7 @@ import { ModelType } from '@/enums/modelType';
 import { FileAnnotationHistory } from '@/cache/fileAnnotationHistory';
 import { imageFromFile } from '@/util/imageFromFile';
 import type { MultipleViewImage } from '@/interface/multiple_view_image';
+import { Perspective } from '@/graph/perspective';
 
 /**
  * Represents a model using MediaPipe for face landmark detection.
@@ -20,7 +21,10 @@ export class MediapipeModel implements ModelApi<Point3D> {
   private meshLandmarker: FaceLandmarker | null = null;
   private readonly imageContainer = new Image();
 
-  static processResult(result: FaceLandmarkerResult) {
+  static processResult(
+    result: FaceLandmarkerResult,
+    humanViewingDir?: Point3D
+  ): Graph<Point3D> | null {
     const graphs = result.faceLandmarks
       .map((landmarks) =>
         landmarks
@@ -40,9 +44,51 @@ export class MediapipeModel implements ModelApi<Point3D> {
             ...FaceLandmarker.FACE_LANDMARKS_RIGHT_IRIS.map((con) => con.start)
           ].includes(point.id);
         });
+        const g = new Graph(landmarks);
+        landmarks = landmarks.map((value) => {
+          const viewingDir = new Point3D(-1, 0, 0, 1, []);
+          if (!humanViewingDir) return value;
+
+          const neighbourIds = value.getNeighbourIds();
+          const neighbours: (Point3D | undefined)[] = neighbourIds.map((idx) => g.getById(idx));
+          const triangles: [Point3D, Point3D, Point3D][] = [];
+
+          if (neighbours.length === 0) {
+            value.visible = true;
+            return value;
+          }
+
+          neighbours.forEach((neighbour) => {
+            if (!neighbour) return;
+            const sharedNeighborIds = neighbour
+              .getNeighbourIds()
+              .filter(
+                (possibleSharedId) =>
+                  value.getNeighbourIds().includes(possibleSharedId) &&
+                  possibleSharedId !== value.id
+              );
+            sharedNeighborIds.forEach((sharedNeighborId) => {
+              const sharedNeighbor = g.getById(sharedNeighborId);
+              if (!sharedNeighbor) return;
+              triangles.push([value, neighbour, sharedNeighbor]);
+            });
+          });
+
+          // Hide points, where all triangles are not visible
+          let visible = false;
+          triangles.forEach((points) => {
+            const normal = Perspective.calculateNormal(points, humanViewingDir);
+            visible = visible || !Perspective.isVisible(normal, viewingDir);
+          });
+
+          value.visible = visible;
+          console.log(value.visible);
+          return value;
+        });
         return new Graph(landmarks);
       });
     if (graphs) {
+      console.log(graphs);
       return graphs[0];
     }
     return null;

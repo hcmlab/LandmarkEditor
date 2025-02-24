@@ -59,6 +59,7 @@ export class Point3D extends Point2D {
     copy.hovered = this.hovered;
     copy.deleted = this.deleted;
     copy.selected = this.selected;
+    copy.visible = this.visible;
     return copy;
   }
 

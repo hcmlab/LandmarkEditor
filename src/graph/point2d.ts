@@ -64,6 +64,19 @@ export class Point2D {
     this._deleted = value;
   }
 
+  private _visible: boolean = false;
+
+  /**
+   * Gets or sets whether the point is visible from the camera.
+   */
+  get visible(): boolean {
+    return this._visible;
+  }
+
+  set visible(value: boolean) {
+    this._visible = value;
+  }
+
   protected _x: number;
 
   /**
@@ -149,6 +162,7 @@ export class Point2D {
     copy.hovered = this.hovered;
     copy.deleted = this.deleted;
     copy.selected = this.selected;
+    copy.visible = this.visible;
     return copy;
   }
 

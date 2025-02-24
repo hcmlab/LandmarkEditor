@@ -62,19 +62,19 @@ export const useAnnotationHistoryStore = defineStore({
         const mesh = {} as FaceLandmarkerResult;
         if (!value.center?.mesh) return;
         mesh.faceLandmarks = [value.center?.mesh];
-        const graph = MediapipeModel.processResult(mesh);
+        const graph = MediapipeModel.processResult(mesh, value.center?.viewingDir);
         if (!graph) return;
         h.add(graph);
         if (value.left?.mesh) {
           mesh.faceLandmarks = [value.left?.mesh];
-          const graph = MediapipeModel.processResult(mesh);
+          const graph = MediapipeModel.processResult(mesh, value.left?.viewingDir);
           if (!graph) return;
           h.file.selected = Orientation.left;
           h.add(graph);
         }
         if (value.right?.mesh) {
           mesh.faceLandmarks = [value.right?.mesh];
-          const graph = MediapipeModel.processResult(mesh);
+          const graph = MediapipeModel.processResult(mesh, value.right?.viewingDir);
           if (!graph) return;
           h.file.selected = Orientation.right;
           h.add(graph);

@@ -294,7 +294,13 @@ export class FaceMeshEditor extends Editor {
     pointPairs.forEach((connection) => {
       let startPoint = connection.start;
       let endPoint = connection.end;
-      if (startPoint && endPoint && !startPoint.deleted && !endPoint.deleted) {
+      if (
+        startPoint &&
+        endPoint &&
+        !startPoint.deleted &&
+        !endPoint.deleted &&
+        (startPoint.visible || endPoint.visible)
+      ) {
         startPoint = Perspective.project(Editor.image, startPoint);
         endPoint = Perspective.project(Editor.image, endPoint);
         Editor.ctx.moveTo(startPoint.x, startPoint.y);
@@ -306,11 +312,10 @@ export class FaceMeshEditor extends Editor {
     pointPairs.forEach((connection) => {
       const startPoint = connection.start;
       const endPoint = connection.end;
-      if (!startPoint || !endPoint) return;
+      if (!startPoint || !endPoint || !startPoint.visible || !endPoint.visible) return;
       this.drawPoint(startPoint);
       this.drawPoint(endPoint);
     });
   }
 }
 // TODO: when moving side images translate the coordinates to the image coordinate system with the matrix
-// TODO: only render points which are in foreground
