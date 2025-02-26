@@ -312,10 +312,9 @@ export class FaceMeshEditor extends Editor {
     pointPairs.forEach((connection) => {
       const startPoint = connection.start;
       const endPoint = connection.end;
-      if (!startPoint || !endPoint || !startPoint.visible || !endPoint.visible) return;
+      if (!startPoint || !endPoint || (!startPoint.visible && !endPoint.visible)) return;
       this.drawPoint(startPoint);
       this.drawPoint(endPoint);
     });
   }
 }
-// TODO: when moving side images translate the coordinates to the image coordinate system with the matrix

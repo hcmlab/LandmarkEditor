@@ -71,7 +71,7 @@ function orientationFromMesh(mesh: NormalizedLandmark[]) {
     leftNose = mesh[279];
     rightNose = mesh[49];
   } catch (error) {
-    console.log('error creating directional points', mesh, error);
+    console.error('error creating directional points', mesh, error);
   }
 
   if (!noseTip || !leftNose || !rightNose) {

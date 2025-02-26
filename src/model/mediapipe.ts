@@ -82,13 +82,11 @@ export class MediapipeModel implements ModelApi<Point3D> {
           });
 
           value.visible = visible;
-          console.log(value.visible);
           return value;
         });
         return new Graph(landmarks);
       });
     if (graphs) {
-      console.log(graphs);
       return graphs[0];
     }
     return null;

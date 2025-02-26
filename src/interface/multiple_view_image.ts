@@ -27,7 +27,6 @@ export class MultipleViewImage {
   }
 
   public selectedGuess(): orientationGuessResult | null {
-    console.log(this.selected);
     switch (this.selected) {
       case Orientation.center:
         return this.center;

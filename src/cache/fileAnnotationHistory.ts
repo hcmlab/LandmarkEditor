@@ -296,7 +296,6 @@ export class FileAnnotationHistory<T extends Point2D> {
       ];
     }
 
-    console.log(this._file.selectedGuess());
     const point_matrix = this._file.selectedGuess()?.transformationMatrix;
     if (!point_matrix) {
       throw new Error('No transformation matrix found');
@@ -309,7 +308,6 @@ export class FileAnnotationHistory<T extends Point2D> {
           point.matrix.clone()
         )
       );
-      console.log(point);
       Object.entries(matrices).forEach(([orient, [matrix, rev_matrix]]) => {
         if (matrix) {
           this.updatePerspectiveFromMatrix(point, matrix, rev_matrix, orient as Orientation);
@@ -359,7 +357,6 @@ export class FileAnnotationHistory<T extends Point2D> {
         math.subset(move, math.index([0, 1, 2]))
       )
     ); // Add the movement
-    console.log(other_transposed);
     other_transposed = math.multiply(rev_matrix, other_transposed); // Convert back to original perspective
     other.matrix = normalizeVector(other_transposed);
     g.points[other.id] = other;
