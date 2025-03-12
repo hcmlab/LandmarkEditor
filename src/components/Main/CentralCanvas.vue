@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, watch } from 'vue';
 import { Editor } from '@/Editors/Editor';
-import { useAnnotationHistoryStore } from '@/stores/annotationHistoryStore';
 import { useAnnotationToolStore } from '@/stores/annotationToolStore';
 import { AnnotationTool } from '@/enums/annotationTool';
 import { FaceMeshEditor } from '@/Editors/FaceMeshEditor';
 import { BackgroundDrawer } from '@/Editors/BackgroundDrawer';
+import { PoseEditor } from '@/Editors/PoseEditor';
 
-const annotationHistoryStore = useAnnotationHistoryStore();
-const annotationToolStore = useAnnotationToolStore();
+const tools = useAnnotationToolStore();
 
 const editors = ref<Editor[]>([new BackgroundDrawer()]);
 const canvas = ref<HTMLCanvasElement>();
@@ -22,14 +21,14 @@ onMounted(() => {
   window.addEventListener('resize', onResize);
   if (!canvas.value) return;
   Editor.setCanvas(canvas.value);
-  annotationToolStore.tools.forEach((tool) => {
+  tools.getUsedTools().forEach((tool) => {
     editors.value.push(fromTool(tool));
   });
   Editor.draw();
 });
 
 watch(
-  () => annotationToolStore.tools,
+  () => tools.getUsedTools(),
   (value, oldValue) => {
     const added = new Set([...value].filter((tool) => !oldValue.has(tool)));
     const removed = new Set([...oldValue].filter((tool) => !value.has(tool)));
@@ -51,9 +50,11 @@ watch(
 );
 
 watch(
-  () => annotationHistoryStore.selectedHistory,
+  () => tools.getSelectedHistory(),
   async (value) => {
-    if (!value) return;
+    if (!value) {
+      throw new Error('Failed to get selected History');
+    }
     await Editor.setBackgroundSource(value.file);
     Editor.center();
     Editor.draw();
@@ -67,6 +68,8 @@ function fromTool(tool: AnnotationTool): Editor {
   switch (tool) {
     case AnnotationTool.FaceMesh:
       return new FaceMeshEditor();
+    case AnnotationTool.Pose:
+      return new PoseEditor();
     default:
       throw Error('unknown tool: ' + tool);
   }
@@ -151,5 +154,3 @@ const onResize = () => {
     />
   </div>
 </template>
-
-<style scoped></style>

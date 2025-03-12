@@ -14,7 +14,10 @@ const tools = computed(() =>
 function componentFromTool(tool: AnnotationTool) {
   switch (tool) {
     case AnnotationTool.FaceMesh: {
-      return defineAsyncComponent(() => import('./ToolMenu/FaceMesh.vue'));
+      return defineAsyncComponent(() => import('./ToolMenu/FaceMeshToolMenu.vue'));
+    }
+    case AnnotationTool.Pose: {
+      return defineAsyncComponent(() => import('./ToolMenu/PoseToolMenu.vue'));
     }
     default:
       return null;

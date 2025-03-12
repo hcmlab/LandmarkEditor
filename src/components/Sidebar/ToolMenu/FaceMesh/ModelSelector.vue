@@ -5,13 +5,12 @@ import { ref } from 'vue';
 import { ModelType } from '@/enums/modelType';
 import { WebServiceModel } from '@/model/webservice';
 import { MediapipeModel } from '@/model/mediapipe';
-import { useModelStore } from '@/stores/modelStore';
 import { urlError } from '@/enums/urlError';
 import WebserviceSelectModal from '@/components/Modals/WebserviceSelectModal.vue';
-import { useAnnotationHistoryStore } from '@/stores/annotationHistoryStore';
+import { useAnnotationToolStore } from '@/stores/annotationToolStore';
+import { AnnotationTool } from '@/enums/annotationTool';
 
-const modelStore = useModelStore();
-const annotationHistoryStore = useAnnotationHistoryStore();
+const tools = useAnnotationToolStore();
 const showModal = ref(false);
 
 function openModal(): void {
@@ -28,9 +27,9 @@ function setModel(model: ModelType): boolean {
   const btnMediapipe = document.getElementById('btnModelMediapipe') as HTMLInputElement;
   const btnCustom = document.getElementById('btnModelCustom') as HTMLInputElement;
   switch (model) {
-    case ModelType.mediapipe: {
+    case ModelType.mediapipeFaceMesh: {
       btnMediapipe.checked = true;
-      modelStore.model = new MediapipeModel();
+      tools.models.set(AnnotationTool.FaceMesh, new MediapipeModel());
       showModal.value = false;
       break;
     }
@@ -42,7 +41,7 @@ function setModel(model: ModelType): boolean {
       WebServiceModel.verifyUrl(url).then((error) => {
         const errorText = $('#urlErrorText');
         if (error === null) {
-          modelStore.model = new WebServiceModel(url);
+          tools.models.set(AnnotationTool.FaceMesh, new WebServiceModel(url));
           showModal.value = false;
           errorText.hide();
           const saveElement = $('#saveNotification')[0];
@@ -51,13 +50,25 @@ function setModel(model: ModelType): boolean {
           localStorage.setItem('apiUrl', url);
           const notificationText = $('#saveNotificationText');
           notificationText.text('Webservice url saved!');
-          annotationHistoryStore.histories.forEach((history) => {
-            modelStore.model?.detect(history.file).then((graphs) => {
+
+          const histories = tools.getAllHistories();
+          if (!histories) {
+            console.log('Failed to retrieve history on API change.');
+            return;
+          }
+
+          const model = tools.getModel(AnnotationTool.FaceMesh);
+          if (!model) {
+            throw new Error('Failed to retrieve model on API change.');
+          }
+
+          histories.forEach((history) => {
+            model.detect(history.file).then((graphs) => {
               if (graphs === null) {
                 return;
               }
               history.clear();
-              history.append(graphs);
+              history.merge(graphs, AnnotationTool.FaceMesh);
             });
           });
           setTimeout(() => {
@@ -88,8 +99,7 @@ function setModel(model: ModelType): boolean {
       break;
     }
     default:
-      console.error('No model "' + model + '" found to change to!');
-      break;
+      throw new Error(`No model "${model}" found to change to!`);
   }
   return false;
 }
@@ -113,7 +123,7 @@ function setModel(model: ModelType): boolean {
         name="btnradio"
         id="btnModelMediapipe"
         autocomplete="off"
-        @change="setModel(ModelType.mediapipe)"
+        @change="setModel(ModelType.mediapipeFaceMesh)"
         checked
       />
       <label class="btn btn-outline-secondary" for="btnModelMediapipe"

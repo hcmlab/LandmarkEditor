@@ -1,36 +1,55 @@
 <script setup lang="ts">
-import { useAnnotationHistoryStore } from '@/stores/annotationHistoryStore';
-import { useModelStore } from '@/stores/modelStore';
 import ButtonWithIcon from '@/components/MenuItems/ButtonWithIcon.vue';
+import { useAnnotationToolStore } from '@/stores/annotationToolStore';
+import type { FileAnnotationHistory } from '@/cache/fileAnnotationHistory';
+import type { Point2D } from '@/graph/point2d';
 
-const annotationHistoryStore = useAnnotationHistoryStore();
-const modelStore = useModelStore();
+const tools = useAnnotationToolStore();
 
-function undo(): boolean {
-  annotationHistoryStore.selectedHistory?.previous();
+function undo() {
+  const selectedHistory = tools.getSelectedHistory();
+  if (!selectedHistory) {
+    throw new Error('Could not retrieve selected history');
+  }
+  tools.getUsedTools().forEach((tool) => {
+    selectedHistory.previous(tool);
+  });
   return false;
 }
 
-function redo(): boolean {
-  annotationHistoryStore.selectedHistory?.next();
-  return false;
+function redo() {
+  const selectedHistory = tools.getSelectedHistory();
+  if (!selectedHistory) {
+    throw new Error('Could not retrieve selected history');
+  }
+  tools.getUsedTools().forEach((tool) => {
+    selectedHistory.next(tool);
+  });
 }
 
-function reset(): boolean {
-  annotationHistoryStore.selectedHistory?.clear();
-  runDetection();
-  return false;
+function reset() {
+  const selectedHistory = tools.getSelectedHistory();
+  if (!selectedHistory) {
+    throw new Error('Could not retrieve selected history');
+  }
+
+  if (!selectedHistory) return;
+  selectedHistory.clear();
+  runDetection(selectedHistory);
 }
 
-function runDetection() {
-  const history = annotationHistoryStore.selectedHistory;
-  if (!history) return;
-  modelStore.model?.detect(history.file).then((graphs) => {
-    if (graphs === null) {
-      return;
-    }
-    history.clear();
-    history.append(graphs);
+function runDetection(selectedHistory: FileAnnotationHistory<Point2D>) {
+  tools.getUsedTools()?.forEach((tool) => {
+    const model = tools.getModel(tool);
+    if (!model) return;
+
+    model.detect(selectedHistory.file).then((graphs) => {
+      if (graphs === null) {
+        return;
+      }
+      selectedHistory.clear();
+      selectedHistory.merge(graphs, tool);
+    });
   });
 }
 </script>
@@ -53,5 +72,3 @@ function runDetection() {
     </BDropdownItem>
   </BNavItemDropdown>
 </template>
-
-<style scoped></style>

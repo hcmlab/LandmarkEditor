@@ -1,6 +1,7 @@
 import $ from 'jquery';
 import type { ImageFile } from '@/imageFile';
 import { AnnotationTool } from '@/enums/annotationTool';
+import { imageFromFile } from '@/util/imageFromFile';
 
 export abstract class Editor {
   protected static canvas: HTMLCanvasElement;
@@ -40,14 +41,14 @@ export abstract class Editor {
     }
     Editor.ctx = ctx as CanvasRenderingContext2D;
     Editor.image.onerror = (e) => {
-      console.error('Error loading image', e);
-      throw new Error('Failed to load image.');
+      throw new Error(`Failed to load image. ${e}`);
     };
   }
 
   public static async setBackgroundSource(source: ImageFile): Promise<void> {
+    const img_src = await imageFromFile(source.filePointer);
     const imageLoadPromise = new Promise<void>((resolve, reject) => {
-      Editor.image.src = source.html;
+      Editor.image.src = img_src;
       Editor.image.onload = () => {
         if (Editor.image.width === 0) {
           reject(new Error('Image loaded with width 0.'));
@@ -58,8 +59,7 @@ export abstract class Editor {
         resolve();
       };
       Editor.image.onerror = (e) => {
-        console.error('Error loading image', e);
-        reject(new Error('Failed to load image.'));
+        reject(new Error(`Failed to load image: ${e}`));
       };
     });
 

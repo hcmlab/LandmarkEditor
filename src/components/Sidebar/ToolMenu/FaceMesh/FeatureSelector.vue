@@ -7,41 +7,45 @@ import {
   FACE_FEATURE_RIGHT_EYE,
   FACE_FEATURE_RIGHT_EYEBROW
 } from '@/graph/face_landmarks_features';
-import { useAnnotationHistoryStore } from '@/stores/annotationHistoryStore';
 import ButtonWithIcon from '@/components/MenuItems/ButtonWithIcon.vue';
+import { useAnnotationToolStore } from '@/stores/annotationToolStore';
+import { AnnotationTool } from '@/enums/annotationTool';
 
-const annotationHistoryStore = useAnnotationHistoryStore();
+const tools = useAnnotationToolStore();
+
+const features = ['Left Eye', 'Left Eyebrow', 'Right Eye', 'Right Eyebrow', 'Nose', 'Mouth'];
 
 function deleteFeature(feature: string) {
-  const graph = annotationHistoryStore.selectedHistory?.get();
+  const selectedHistory = tools.getSelectedHistory();
+  if (!selectedHistory) {
+    throw new Error('Failed to get histories on feature deletion.');
+  }
+  const graph = selectedHistory.get(AnnotationTool.FaceMesh);
   if (!graph) return;
   switch (feature) {
-    case 'left_eye':
+    case 'Left Eye':
       graph.deletePoints(FACE_FEATURE_LEFT_EYE);
       break;
-    case 'left_eyebrow':
+    case 'Left Eyebrow':
       graph.deletePoints(FACE_FEATURE_LEFT_EYEBROW);
       break;
-    case 'right_eye':
+    case 'Right Eye':
       graph.deletePoints(FACE_FEATURE_RIGHT_EYE);
       break;
-    case 'right_eyebrow':
+    case 'Right Eyebrow':
       graph.deletePoints(FACE_FEATURE_RIGHT_EYEBROW);
       break;
-    case 'nose':
+    case 'Nose':
       graph.deletePoints(FACE_FEATURE_NOSE);
       break;
-    case 'mouth':
+    case 'Mouth':
       graph.deletePoints(FACE_FEATURE_LIPS);
       break;
     default:
-      console.error('No feature "' + feature + '" found to delete!');
-      break;
+      throw new Error('No feature "' + feature + '" found to delete!');
   }
-  annotationHistoryStore.selectedHistory?.add(graph);
+  selectedHistory.add(graph, AnnotationTool.FaceMesh);
 }
-
-const features = ['Left Eye', 'Left Eyebrow', 'Right Eye', 'Right Eyebrow', 'Nose', 'Mouth'];
 </script>
 
 <template>
@@ -54,13 +58,6 @@ const features = ['Left Eye', 'Left Eyebrow', 'Right Eye', 'Right Eyebrow', 'Nos
     </div>
   </div>
   <div v-for="feature in features" :key="feature">
-    <button-with-icon
-      :text="feature"
-      icon="bi-trash"
-      shortcut=""
-      @click="deleteFeature(feature.toLowerCase().replace(/\s/g, '_'))"
-    />
+    <button-with-icon :text="feature" icon="bi-trash" shortcut="" @click="deleteFeature(feature)" />
   </div>
 </template>
-
-<style scoped></style>

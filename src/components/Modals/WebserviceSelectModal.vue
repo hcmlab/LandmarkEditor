@@ -77,7 +77,7 @@ watch(isModalVisible, (newValue) => {
         type="button"
         class="btn btn-secondary"
         data-bs-dismiss="modal"
-        @click="emits('changeModel', ModelType.mediapipe)"
+        @click="emits('changeModel', ModelType.mediapipeFaceMesh)"
       >
         Cancel
       </button>

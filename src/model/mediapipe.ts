@@ -8,8 +8,9 @@ import { findNeighbourPointIds } from '@/graph/face_landmarks_features';
 import { Graph } from '@/graph/graph';
 import { Point3D } from '@/graph/point3d';
 import { ModelType } from '@/enums/modelType';
-import type { ImageFile } from '@/imageFile';
-import { FileAnnotationHistory } from '@/cache/fileAnnotationHistory';
+import { type ImageFile } from '@/imageFile';
+import { AnnotationTool } from '@/enums/annotationTool';
+import { imageFromFile } from '@/util/imageFromFile';
 
 /**
  * Represents a model using MediaPipe for face landmark detection.
@@ -18,11 +19,8 @@ import { FileAnnotationHistory } from '@/cache/fileAnnotationHistory';
 export class MediapipeModel implements ModelApi<Point3D> {
   private meshLandmarker: FaceLandmarker | null = null;
 
-  /**
-   * Creates a new MediapipeModel instance.
-   */
-  constructor() {
-    FilesetResolver.forVisionTasks(
+  private async initialize(): Promise<void> {
+    return FilesetResolver.forVisionTasks(
       'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
     )
       .then((filesetResolver) =>
@@ -39,11 +37,18 @@ export class MediapipeModel implements ModelApi<Point3D> {
           numFaces: 1
         })
       )
-      .then((landmarker) => (this.meshLandmarker = landmarker));
+      .then((landmarker) => {
+        this.meshLandmarker = landmarker;
+      })
+      .catch((e) => {
+        throw new Error(`Failed to load Landmarker: ${e}`);
+      });
   }
 
-  async detect(imageFile: ImageFile): Promise<FileAnnotationHistory<Point3D>> {
-    return new Promise<FileAnnotationHistory<Point3D>>((resolve, reject) => {
+  async detect(imageFile: ImageFile): Promise<Graph<Point3D>[] | null> {
+    if (!this.meshLandmarker) await this.initialize();
+    const img_src = await imageFromFile(imageFile.filePointer);
+    return new Promise<Graph<Point3D>[] | null>((resolve, reject) => {
       const image = new Image();
       image.onload = (_) => {
         const result = this.meshLandmarker?.detect(image);
@@ -56,11 +61,9 @@ export class MediapipeModel implements ModelApi<Point3D> {
           reject(new Error('Face(s) could not be detected!'));
           return;
         }
-        const h = new FileAnnotationHistory<Point3D>(imageFile);
-        h.add(graph);
-        resolve(h);
+        resolve([graph]);
       };
-      image.src = imageFile.html;
+      image.src = img_src;
     });
   }
 
@@ -95,6 +98,10 @@ export class MediapipeModel implements ModelApi<Point3D> {
   }
 
   type(): ModelType {
-    return ModelType.mediapipe;
+    return ModelType.mediapipeFaceMesh;
+  }
+
+  tool(): AnnotationTool {
+    return AnnotationTool.FaceMesh;
   }
 }

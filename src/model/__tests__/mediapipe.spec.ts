@@ -19,7 +19,7 @@ function blobToFile(blob: Blob, name: string) {
 describe('MediapipeModel', () => {
   it('should initialize MediapipeModel correctly', async () => {
     expect(model);
-    expect(model.type()).eq(ModelType.mediapipe);
+    expect(model.type()).eq(ModelType.mediapipeFaceMesh);
   });
 
   it('should try to detect image correctly', async () => {
@@ -50,6 +50,6 @@ describe('MediapipeModel', () => {
   });
 
   it('should return correct model type', async () => {
-    expect(model.type()).eq(ModelType.mediapipe);
+    expect(model.type()).eq(ModelType.mediapipeFaceMesh);
   });
 });

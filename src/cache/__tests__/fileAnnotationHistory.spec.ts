@@ -1,12 +1,12 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { Graph } from '../../graph/graph';
 import { Point2D } from '../../graph/point2d';
 import { SaveStatus } from '../../enums/saveStatus';
 import { FileAnnotationHistory } from '../fileAnnotationHistory';
+import { ImageFile } from '../../imageFile';
+import { AnnotationTool } from '../../enums/annotationTool';
 
 vi.mock('../../imageFile');
-
-import { ImageFile } from '../../imageFile';
 
 function generateMockedGraph() {
   const x = Math.random() * 100; // Random number between 0 and 100
@@ -50,13 +50,13 @@ describe('FileAnnotationHistory', () => {
     const graph = generateMockedGraph();
 
     // state before addition
-    expect(history.isEmpty());
+    expect(history.isEmpty(AnnotationTool.Pose));
 
-    history.add(graph);
+    history.add(graph, AnnotationTool.Pose);
 
     // state after addition
-    expect(!history.isEmpty());
-    expect(history.get()).toStrictEqual(graph);
+    expect(!history.isEmpty(AnnotationTool.Pose));
+    expect(history.get(AnnotationTool.Pose)).toStrictEqual(graph);
   });
 
   it('moves history index correctly', () => {
@@ -65,31 +65,31 @@ describe('FileAnnotationHistory', () => {
     const graph1 = generateMockedGraph();
     const graph2 = generateMockedGraph();
 
-    history.add(graph1);
-    history.add(graph2);
-    expect(history.get()).toStrictEqual(graph2);
+    history.add(graph1, AnnotationTool.Pose);
+    history.add(graph2, AnnotationTool.Pose);
+    expect(history.get(AnnotationTool.Pose)).toStrictEqual(graph2);
 
-    history.previous();
-    expect(history.get()).toStrictEqual(graph1);
+    history.previous(AnnotationTool.Pose);
+    expect(history.get(AnnotationTool.Pose)).toStrictEqual(graph1);
 
-    history.next();
-    expect(history.get()).toStrictEqual(graph2);
+    history.next(AnnotationTool.Pose);
+    expect(history.get(AnnotationTool.Pose)).toStrictEqual(graph2);
   });
 
   it('clears properly', () => {
     const file = ImageFile.create(mockFile);
     const history = new FileAnnotationHistory(file, 10);
 
-    history.add(generateMockedGraph());
+    history.add(generateMockedGraph(), AnnotationTool.Pose);
     history.clear();
-    expect(history.get()).toBe(null);
+    expect(history.get(AnnotationTool.Pose)).toBe(null);
   });
 
   it('marks as sent properly', () => {
     const file = ImageFile.create(mockFile);
     const history = new FileAnnotationHistory(file, 10);
 
-    history.add(generateMockedGraph());
+    history.add(generateMockedGraph(), AnnotationTool.FaceMesh);
     history.markAsSent();
     expect(history.status).eq(SaveStatus.unedited);
   });

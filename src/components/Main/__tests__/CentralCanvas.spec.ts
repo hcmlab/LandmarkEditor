@@ -7,8 +7,8 @@ vi.mock('@/Editors/BackgroundDrawer');
 vi.mock('@/Editors/Editor');
 
 import { Editor } from '../../../Editors/Editor';
-import { useAnnotationHistoryStore } from '../../../stores/annotationHistoryStore';
 import CentralCanvas from '../CentralCanvas.vue';
+import { useAnnotationToolStore } from '../../../stores/annotationToolStore';
 
 describe('AnnotationCanvas.vue', () => {
   let wrapper;
@@ -23,10 +23,10 @@ describe('AnnotationCanvas.vue', () => {
   });
 
   it('should update the background source when selectedHistory changes', async () => {
-    const annotationHistoryStore = useAnnotationHistoryStore();
+    const tools = useAnnotationToolStore();
 
     const mockFile = { file: 'test-image.png' };
-    annotationHistoryStore.selectedHistory = mockFile;
+    tools.histories.selectedHistory = mockFile;
 
     await wrapper.vm.$nextTick();
 

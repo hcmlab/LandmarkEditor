@@ -2,6 +2,7 @@ import { Point2D } from '@/graph/point2d';
 import { Graph } from '@/graph/graph';
 import { ImageFile } from '@/imageFile';
 import { SaveStatus } from '@/enums/saveStatus';
+import { AnnotationTool } from '@/enums/annotationTool';
 
 export interface PointData {
   deleted: boolean;
@@ -22,7 +23,10 @@ export interface GraphData {
  */
 export class FileAnnotationHistory<T extends Point2D> {
   private readonly cacheSize: number;
-  private _history: Graph<T>[] = [];
+  private _history: Map<AnnotationTool, Graph<T>[]> = new Map([
+    [AnnotationTool.FaceMesh, []],
+    [AnnotationTool.Pose, []]
+  ]);
   private currentHistoryIndex: number = 0;
   private readonly _file: ImageFile;
   private _status: SaveStatus;
@@ -54,44 +58,59 @@ export class FileAnnotationHistory<T extends Point2D> {
     this._status = value;
   }
 
-  protected get history() {
-    return this._history;
+  protected history(tool: AnnotationTool) {
+    return this._history.get(tool);
   }
 
   /**
    * Returns the current history as a plain object.
    * If the user used the "undo" feature, any states in the "future" will be ignored
    */
-  protected get toDictArray(): PointData[][] {
-    return this._history.slice(0, this.currentHistoryIndex + 1).map((graph) => graph.toDictArray());
+  protected toDictArray(tool: AnnotationTool): PointData[][] | null {
+    const h = this._history.get(tool);
+    if (!h) {
+      throw new Error('Failed to retrieve history.');
+    }
+
+    return h.slice(0, this.currentHistoryIndex + 1).map((graph) => graph.toDictArray());
   }
 
   /**
    * returns the serialized data of the history, included file sha.
    */
-  get graphData(): GraphData {
+  graphData(tool: AnnotationTool): GraphData | null {
+    const points = this.toDictArray(tool);
+    if (!points) {
+      throw new Error('Failed to retrieve history.');
+    }
     return {
-      points: this.toDictArray,
+      points: points,
       sha256: this.file.sha
     };
   }
 
   /**
    * Adds a new annotation item to the history.
-   * @param {Graph<T>} item - The graph of points representing the annotation.
+   * @param item - The graph of points representing the annotation.
+   * @param tool - The annotation tool to add to.
    */
-  add(item: Graph<T>): void {
-    if (this.currentHistoryIndex + 1 < this.history.length) {
+  add(item: Graph<T>, tool: AnnotationTool): void {
+    const h = this._history.get(tool);
+    if (!h) {
+      throw new Error('Failed to retrieve history.');
+    }
+
+    if (this.currentHistoryIndex + 1 < h.length) {
       // Delete history stack when moved back and changed something
-      this._history.length = this.currentHistoryIndex + 1;
+      h.length = this.currentHistoryIndex + 1;
     }
     // only act if a size is provided see Issue #70
-    if (this.cacheSize !== 0 && this.cacheSize === this._history.length) {
+    if (this.cacheSize !== 0 && this.cacheSize === h.length) {
       // Remove the first item as it is too old and cache limit is reached
-      this._history.shift();
+      h.shift();
     }
-    this._history.push(item.clone());
-    this.currentHistoryIndex = this._history.length - 1;
+    h.push(item.clone());
+    this.currentHistoryIndex = h.length - 1;
   }
 
   /**
@@ -99,24 +118,34 @@ export class FileAnnotationHistory<T extends Point2D> {
    * Expects the latest item at the last index (-1)
    *
    * @param items - An array of Graph items to be merged.
+   * @param tool - The annotation tool to add to.
    */
-  merge(items: Graph<T>[]) {
-    items.forEach((item) => this.add(item));
+  merge(items: Graph<T>[] | undefined | null, tool: AnnotationTool) {
+    if (!items) {
+      throw new Error(`Failed to merge history for: ${tool}`);
+    }
+    items.forEach((item) => this.add(item, tool));
   }
 
   append(other: FileAnnotationHistory<T>) {
-    this.merge(other.history);
+    this.merge(other.history(AnnotationTool.FaceMesh), AnnotationTool.FaceMesh);
+    this.merge(other.history(AnnotationTool.Pose), AnnotationTool.Pose);
   }
 
   /**
    * Sets the current history index to the specified value.
    * @param {number} index - The desired history index.
+   * @param tool - The annotation tool to add to.
    */
-  setIndex(index: number): void {
+  setIndex(index: number, tool: AnnotationTool): void {
+    const h = this._history.get(tool);
+    if (!h) {
+      throw new Error('Failed to retrieve history.');
+    }
     if (index < 0) {
       index = 0;
-    } else if (index >= this._history.length) {
-      index = this._history.length - 1;
+    } else if (index >= h.length) {
+      index = h.length - 1;
     }
     if (this.currentHistoryIndex !== index) {
       this._status = SaveStatus.edited;
@@ -127,41 +156,55 @@ export class FileAnnotationHistory<T extends Point2D> {
   /**
    * Moves to the next history entry.
    */
-  next(): void {
-    this.setIndex(this.currentHistoryIndex + 1);
+  next(tool: AnnotationTool): void {
+    this.setIndex(this.currentHistoryIndex + 1, tool);
   }
 
   /**
    * Moves to the previous history entry.
    */
-  previous(): void {
-    this.setIndex(this.currentHistoryIndex - 1);
+  previous(tool: AnnotationTool): void {
+    this.setIndex(this.currentHistoryIndex - 1, tool);
   }
 
   /**
    * Retrieves the current annotation graph.
-   * @returns {null | Graph<T>} - The current annotation graph or null if empty.
+   * @param tool - The tool to get the history for.
+   * @returns - The current annotation graph or null if empty.
    */
-  get(): null | Graph<T> {
-    if (!this.isEmpty()) {
-      return this._history[this.currentHistoryIndex];
+  get(tool: AnnotationTool): null | Graph<T> {
+    const h = this._history.get(tool);
+    if (!h) {
+      throw new Error('Failed to retrieve history.');
+    }
+
+    if (!this.isEmpty(tool)) {
+      return h[this.currentHistoryIndex];
     }
     return null;
   }
 
   /**
    * Checks if the history is empty.
+   * @param tool - The annotation tool to add to.
    * @returns {boolean} - True if empty, false otherwise.
    */
-  isEmpty(): boolean {
-    return this._history.length === 0;
+  isEmpty(tool: AnnotationTool): boolean {
+    const h = this._history.get(tool);
+    if (!h) {
+      throw new Error('Failed to retrieve history.');
+    }
+    return h.length === 0;
   }
 
   /**
    * Clears the entire history.
    */
   clear() {
-    this._history = [];
+    this._history = new Map([
+      [AnnotationTool.Pose, []],
+      [AnnotationTool.FaceMesh, []]
+    ]);
     this.currentHistoryIndex = 0;
     this._status = SaveStatus.unedited;
   }
@@ -183,8 +226,7 @@ export class FileAnnotationHistory<T extends Point2D> {
     json: GraphData,
     file: ImageFile,
     newObject: (id: number, neighbors: number[]) => T
-  ): FileAnnotationHistory<T> | null {
-    const h = new FileAnnotationHistory<T>(file);
+  ): Graph<T>[] | null {
     // skip files without annotation
     if (Object.keys(json).length == 0) {
       return null;
@@ -198,10 +240,9 @@ export class FileAnnotationHistory<T extends Point2D> {
     if (!Array.isArray(graphs[0])) {
       graphs = [graphs as unknown as PointData[]];
     }
-    graphs.forEach((unparsedGraph) => {
-      const graph: Graph<T> = Graph.fromJson(unparsedGraph, newObject);
-      h.add(graph);
-    });
-    return h;
+    return graphs.reduce((prev, graph) => {
+      prev.push(Graph.fromJson(graph, newObject));
+      return prev;
+    }, [] as Graph<T>[]);
   }
 }

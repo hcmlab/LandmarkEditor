@@ -108,7 +108,7 @@ export class Graph<P extends Point2D> {
     return this.points.map((point) => point.toDict());
   }
 
-  static detect<P extends Point2D>(api: ModelApi<P>, file: ImageFile) {
+  static async detect<P extends Point2D>(api: ModelApi<P>, file: ImageFile) {
     return api.detect(file);
   }
 }

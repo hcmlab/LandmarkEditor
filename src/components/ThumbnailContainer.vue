@@ -3,6 +3,7 @@ import { ref, onMounted, watch, computed } from 'vue';
 import { SaveStatus } from '@/enums/saveStatus';
 import { FileAnnotationHistory } from '@/cache/fileAnnotationHistory';
 import { Point2D } from '@/graph/point2d';
+import { imageFromFile } from '@/util/imageFromFile';
 
 const props = defineProps({
   history: {
@@ -22,9 +23,9 @@ const canvas = ref<HTMLCanvasElement | null>(null);
 const href = ref('#');
 const image = new Image();
 
-onMounted(() => {
+onMounted(async () => {
   image.onload = () => draw();
-  image.src = props.history.file.html;
+  image.src = await imageFromFile(props.history.file.filePointer);
 });
 
 const draw = () => {
@@ -77,9 +78,9 @@ let iconDescription = computed(() => {
 });
 
 watch(
-  () => props.history.file.html,
-  (newSrc) => {
-    image.src = newSrc;
+  () => props.history.file,
+  async (newSrc) => {
+    image.src = await imageFromFile(newSrc.filePointer);
   }
 );
 </script>

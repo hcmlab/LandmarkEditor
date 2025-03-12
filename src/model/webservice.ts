@@ -5,6 +5,8 @@ import { ModelType } from '@/enums/modelType';
 import { urlError } from '@/enums/urlError';
 import type { ImageFile } from '@/imageFile';
 import { FileAnnotationHistory, type GraphData } from '@/cache/fileAnnotationHistory';
+import type { Graph } from '@/graph/graph';
+import { AnnotationTool } from '@/enums/annotationTool';
 
 /**
  * Represents a model using a WebService for face landmark detection.
@@ -20,7 +22,7 @@ export class WebServiceModel implements ModelApi<Point3D> {
     this.url = url;
   }
 
-  async detect(imageFile: ImageFile): Promise<FileAnnotationHistory<Point3D> | null> {
+  async detect(imageFile: ImageFile): Promise<Graph<Point3D>[] | null> {
     const formData: FormData = new FormData();
     formData.append('file', imageFile.filePointer);
 
@@ -44,8 +46,7 @@ export class WebServiceModel implements ModelApi<Point3D> {
           )
         )
         .catch((err: Error) => {
-          console.error(err.message);
-          return null;
+          throw new Error(err.message);
         });
     });
   }
@@ -79,7 +80,7 @@ export class WebServiceModel implements ModelApi<Point3D> {
    */
   static async verifyUrl(url: string): Promise<urlError | null> {
     if (!url.endsWith('/')) {
-      url = url += '/';
+      url += '/';
     }
     const pattern = new RegExp(
       '^(https?:\\/\\/)?' + // protocol
@@ -105,14 +106,16 @@ export class WebServiceModel implements ModelApi<Point3D> {
         return null;
       })
       .catch((error) => {
-        // Log the error message (optional)
-        console.error('Network or other error:', error.message);
-        // Return urlError.Unreachable for network errors or other exceptions
+        console.error(`Network or other error: ${error.message}`);
         return urlError.Unreachable;
       });
   }
 
   type(): ModelType {
     return ModelType.custom;
+  }
+
+  tool(): AnnotationTool {
+    return AnnotationTool.FaceMesh;
   }
 }

@@ -1,19 +1,18 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { ImageFile } from '@/imageFile';
-import { useAnnotationHistoryStore } from '@/stores/annotationHistoryStore';
 import ThumbnailContainer from '@/components/ThumbnailContainer.vue';
 import { SaveStatus } from '@/enums/saveStatus';
 import { FileAnnotationHistory } from '@/cache/fileAnnotationHistory';
 import { Point2D } from '@/graph/point2d';
-import { useModelStore } from '@/stores/modelStore';
+import { useAnnotationToolStore } from '@/stores/annotationToolStore';
+import { AnnotationTool } from '@/enums/annotationTool';
 
-const annotationHistoryStore = useAnnotationHistoryStore();
-const modelStore = useModelStore();
-const histories = ref(useAnnotationHistoryStore().histories);
+const tools = useAnnotationToolStore();
+const histories = ref(tools.getAllHistories());
 
 function selectThumbnail(file: ImageFile): void {
-  const oldHistory = annotationHistoryStore.selectedHistory;
+  const oldHistory = tools.getSelectedHistory();
 
   /* clicking to save */
   if (
@@ -22,19 +21,21 @@ function selectThumbnail(file: ImageFile): void {
     oldHistory.status !== SaveStatus.unedited
   ) {
     oldHistory.status = SaveStatus.saved;
-    modelStore.model
-      .uploadAnnotations({ [file.filePointer.name]: oldHistory.graphData })
+    const graphData = oldHistory.graphData(AnnotationTool.FaceMesh);
+    if (!graphData) return;
+    const model = tools.getModel(AnnotationTool.FaceMesh);
+    if (!model) return;
+    model
+      .uploadAnnotations({
+        [file.filePointer.name]: graphData
+      })
       .catch((reason) => {
-        console.error('Posting history failed: ', reason);
+        throw new Error(`Posting history failed: ${reason}`);
       });
-    return;
   }
 
   /* other image selected */
-  annotationHistoryStore.selectedHistory = annotationHistoryStore.find(
-    file.filePointer.name,
-    file.sha
-  );
+  tools.histories.selectedHistory = tools.histories.find(file.filePointer.name, file.sha);
 }
 </script>
 
@@ -43,11 +44,12 @@ function selectThumbnail(file: ImageFile): void {
     <div class="h-5 d-flex align-items-center justify-content-center">
       <h6>
         Images
-        <small
+        <small v-if="histories"
           >(
           <output id="num-images"> {{ histories.length }}</output>
           )</small
         >
+        <small v-else>(0)</small>
       </h6>
     </div>
     <div id="thumbnailGalleryContainer" class="overflow-auto mh-95 w-100">
@@ -61,5 +63,3 @@ function selectThumbnail(file: ImageFile): void {
     </div>
   </div>
 </template>
-
-<style scoped></style>
