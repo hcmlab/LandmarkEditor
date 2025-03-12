@@ -44,8 +44,6 @@ export abstract class PointMoveEditor extends Editor {
         deep: true
       }
     );
-
-    Editor.add(this);
   }
 
   abstract getDragDepth(): number;
@@ -166,13 +164,14 @@ export abstract class PointMoveEditor extends Editor {
     if (!selected_history) {
       throw new Error('Could not retrieve selected history');
     }
-    selected_history.add(this._graph, this.childTool);
+    selected_history.add(this.graph, this.childTool);
     selected_history.status = SaveStatus.edited;
   }
 
   private loadLatestAnnotation() {
     const selectedHistory = this.tools.getSelectedHistory();
     if (!selectedHistory) return; // there is no error here. Just nothing to render.
+
     this.graph = selectedHistory.get(this.childTool);
     Editor.draw();
   }

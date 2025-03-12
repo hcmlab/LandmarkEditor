@@ -22,6 +22,11 @@ const toolsDesc = [
     Tool: AnnotationTool.Pose,
     Description: 'Annotates the whole body with landmarks',
     Active: tools.tools.has(AnnotationTool.Pose)
+  },
+  {
+    Tool: AnnotationTool.Hand,
+    Description: 'Annotates a hand with landmarks',
+    Active: tools.tools.has(AnnotationTool.Hand)
   }
 ];
 

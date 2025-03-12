@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import ButtonWithIcon from '@/components/MenuItems/ButtonWithIcon.vue';
 import { useAnnotationToolStore } from '@/stores/annotationToolStore';
-import type { FileAnnotationHistory } from '@/cache/fileAnnotationHistory';
-import type { Point2D } from '@/graph/point2d';
 
 const tools = useAnnotationToolStore();
 
@@ -28,29 +26,7 @@ function redo() {
 }
 
 function reset() {
-  const selectedHistory = tools.getSelectedHistory();
-  if (!selectedHistory) {
-    throw new Error('Could not retrieve selected history');
-  }
-
-  if (!selectedHistory) return;
-  selectedHistory.clear();
-  runDetection(selectedHistory);
-}
-
-function runDetection(selectedHistory: FileAnnotationHistory<Point2D>) {
-  tools.getUsedTools()?.forEach((tool) => {
-    const model = tools.getModel(tool);
-    if (!model) return;
-
-    model.detect(selectedHistory.file).then((graphs) => {
-      if (graphs === null) {
-        return;
-      }
-      selectedHistory.clear();
-      selectedHistory.merge(graphs, tool);
-    });
-  });
+  tools.resetCurrentHistory();
 }
 </script>
 

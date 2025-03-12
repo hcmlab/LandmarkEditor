@@ -19,6 +19,9 @@ function componentFromTool(tool: AnnotationTool) {
     case AnnotationTool.Pose: {
       return defineAsyncComponent(() => import('./ToolMenu/PoseToolMenu.vue'));
     }
+    case AnnotationTool.Hand: {
+      return defineAsyncComponent(() => import('./ToolMenu/HandToolMenu.vue'));
+    }
     default:
       return null;
   }

@@ -5,6 +5,7 @@ import { ImageFile } from '@/imageFile';
 import { Graph } from '@/graph/graph';
 import { SaveStatus } from '@/enums/saveStatus';
 import { AnnotationTool } from '@/enums/annotationTool';
+import { useAnnotationToolStore } from '@/stores/annotationToolStore';
 
 export class FileAnnotationHistoryContainer<T extends Point2D> {
   private readonly _histories: FileAnnotationHistory<T>[] = [];
@@ -64,7 +65,7 @@ export class FileAnnotationHistoryContainer<T extends Point2D> {
     }
     this._histories.push(history);
     if (!this.selectedHistory) {
-      this._selectedHistory = history;
+      this.selectedHistory = history;
     }
   }
 
@@ -102,5 +103,32 @@ export class FileAnnotationHistoryContainer<T extends Point2D> {
       h.markAsSent();
     });
     return result;
+  }
+
+  public resetSelectedHistory() {
+    const selectedHistory = this.selectedHistory;
+    if (!selectedHistory) {
+      return;
+    }
+
+    if (!selectedHistory) return;
+
+    this.runDetection(selectedHistory);
+  }
+
+  private runDetection(selectedHistory: FileAnnotationHistory<Point2D>) {
+    const tools = useAnnotationToolStore();
+    tools.getUsedTools()?.forEach((tool) => {
+      const model = tools.getModel(tool);
+      if (!model) return;
+
+      model.detect(selectedHistory.file).then((graphs) => {
+        if (graphs === null) {
+          return;
+        }
+        selectedHistory.clear();
+        selectedHistory.merge(graphs, tool);
+      });
+    });
   }
 }

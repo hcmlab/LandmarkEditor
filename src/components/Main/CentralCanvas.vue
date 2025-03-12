@@ -6,11 +6,13 @@ import { AnnotationTool } from '@/enums/annotationTool';
 import { FaceMeshEditor } from '@/Editors/FaceMeshEditor';
 import { BackgroundDrawer } from '@/Editors/BackgroundDrawer';
 import { PoseEditor } from '@/Editors/PoseEditor';
+import { HandEditor } from '@/Editors/HandEditor';
 
 const tools = useAnnotationToolStore();
 
 const editors = ref<Editor[]>([new BackgroundDrawer()]);
 const canvas = ref<HTMLCanvasElement>();
+let oldTools = new Set<AnnotationTool>([...tools.tools]);
 
 onUnmounted(() => {
   // Cleanup - remove the event listener when component is unmounted
@@ -28,23 +30,25 @@ onMounted(() => {
 });
 
 watch(
-  () => tools.getUsedTools(),
-  (value, oldValue) => {
-    const added = new Set([...value].filter((tool) => !oldValue.has(tool)));
-    const removed = new Set([...oldValue].filter((tool) => !value.has(tool)));
+  () => tools.tools,
+  (value) => {
+    const added = new Set([...value].filter((tool) => !oldTools.has(tool)));
+    const removed = new Set([...oldTools].filter((tool) => !value.has(tool)));
 
     editors.value.forEach((editor) => {
       if (!removed.has(editor.tool)) return;
-      Editor.remove(editor);
+      Editor.remove(editor.tool);
     });
     editors.value = editors.value.filter((editor) => !removed.has(editor.tool));
     added.forEach((tool) => {
       editors.value.push(fromTool(tool));
     });
-    Editor.draw();
+    tools.resetCurrentHistory();
     editors.value.forEach((editor) => {
       editor.onBackgroundLoaded();
     });
+    Editor.draw();
+    oldTools = new Set<AnnotationTool>([...value]);
   },
   { deep: true }
 );
@@ -70,6 +74,8 @@ function fromTool(tool: AnnotationTool): Editor {
       return new FaceMeshEditor();
     case AnnotationTool.Pose:
       return new PoseEditor();
+    case AnnotationTool.Hand:
+      return new HandEditor();
     default:
       throw Error('unknown tool: ' + tool);
   }

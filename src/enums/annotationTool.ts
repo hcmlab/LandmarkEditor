@@ -1,6 +1,7 @@
 export enum AnnotationTool {
   BackgroundDrawer = 'BackgroundDrawer',
   FaceMesh = 'Face Mesh',
+  Hand = 'Hand',
   Pose = 'Pose'
 }
 

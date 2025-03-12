@@ -2,7 +2,7 @@ import { Point2D } from '@/graph/point2d';
 import { Graph } from '@/graph/graph';
 import { ImageFile } from '@/imageFile';
 import { SaveStatus } from '@/enums/saveStatus';
-import { AnnotationTool } from '@/enums/annotationTool';
+import { allAnnotationTools, AnnotationTool } from '@/enums/annotationTool';
 
 export interface PointData {
   deleted: boolean;
@@ -23,10 +23,7 @@ export interface GraphData {
  */
 export class FileAnnotationHistory<T extends Point2D> {
   private readonly cacheSize: number;
-  private _history: Map<AnnotationTool, Graph<T>[]> = new Map([
-    [AnnotationTool.FaceMesh, []],
-    [AnnotationTool.Pose, []]
-  ]);
+  private _history: Map<AnnotationTool, Graph<T>[]> = new Map();
   private currentHistoryIndex: number = 0;
   private readonly _file: ImageFile;
   private _status: SaveStatus;
@@ -40,8 +37,9 @@ export class FileAnnotationHistory<T extends Point2D> {
     this._file = file;
     this.cacheSize = cacheSize;
     this._status = SaveStatus.unedited;
-  }
 
+    this.clear();
+  }
   /**
    * Gets the associated file.
    * @returns {File} - The file associated with the annotations.
@@ -95,6 +93,9 @@ export class FileAnnotationHistory<T extends Point2D> {
    * @param tool - The annotation tool to add to.
    */
   add(item: Graph<T>, tool: AnnotationTool): void {
+    if (!this._history.has(tool)) {
+      throw new Error(`No history for tool ${tool} found.`);
+    }
     const h = this._history.get(tool);
     if (!h) {
       throw new Error('Failed to retrieve history.');
@@ -201,10 +202,9 @@ export class FileAnnotationHistory<T extends Point2D> {
    * Clears the entire history.
    */
   clear() {
-    this._history = new Map([
-      [AnnotationTool.Pose, []],
-      [AnnotationTool.FaceMesh, []]
-    ]);
+    allAnnotationTools.forEach((tool) => {
+      this._history.set(tool, []);
+    });
     this.currentHistoryIndex = 0;
     this._status = SaveStatus.unedited;
   }

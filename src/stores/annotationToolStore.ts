@@ -3,8 +3,9 @@ import { type UnwrapRef } from 'vue';
 import { AnnotationTool } from '@/enums/annotationTool';
 import type { ModelApi } from '@/model/modelApi';
 import type { Point2D } from '@/graph/point2d';
-import { MediapipePoseModel } from '@/model/mediapipePose';
 import { MediapipeModel } from '@/model/mediapipe';
+import { MediapipeHandModel } from '@/model/mediapipeHand';
+import { MediapipePoseModel } from '@/model/mediapipePose';
 import { FileAnnotationHistoryContainer } from '@/cache/FileAnnotationHistoryContainer';
 import { Graph } from '@/graph/graph';
 import { FileAnnotationHistory } from '@/cache/fileAnnotationHistory';
@@ -20,7 +21,8 @@ export const useAnnotationToolStore = defineStore({
     tools: new Set([AnnotationTool.FaceMesh]),
     models: new Map<AnnotationTool, ModelApi<Point2D>>([
       [AnnotationTool.FaceMesh, new MediapipeModel()],
-      [AnnotationTool.Pose, new MediapipePoseModel()]
+      [AnnotationTool.Pose, new MediapipePoseModel()],
+      [AnnotationTool.Hand, new MediapipeHandModel()]
     ]),
     histories: new FileAnnotationHistoryContainer()
   }),
@@ -29,7 +31,9 @@ export const useAnnotationToolStore = defineStore({
       return this.tools;
     },
     getUsedModels(): Array<ModelApi<Point2D>> {
-      return Array.from(this.tools).map((tool) => this.models.get(tool)!);
+      return Array.from(this.tools)
+        .map((tool) => this.models.get(tool))
+        .filter((model): model is ModelApi<Point2D> => model !== undefined);
     },
     getModel(tool: AnnotationTool): ModelApi<Point2D> | undefined {
       return this.models.get(tool);
@@ -45,6 +49,9 @@ export const useAnnotationToolStore = defineStore({
     },
     getSelectedHistory() {
       return this.histories.selectedHistory as FileAnnotationHistory<Point2D>;
+    },
+    resetCurrentHistory() {
+      this.histories.resetSelectedHistory();
     }
   }
 });

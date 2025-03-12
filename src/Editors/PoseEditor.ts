@@ -10,7 +10,6 @@ export class PoseEditor extends PointMoveEditor {
   constructor() {
     super(AnnotationTool.Pose);
 
-    // Size canvas
     this.editorConfigStore.$subscribe(() => {
       Editor.draw();
     });

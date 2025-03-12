@@ -23,8 +23,8 @@ export abstract class Editor {
     Editor.allEditors.push(editor);
   }
 
-  public static remove(editor: Editor) {
-    Editor.allEditors = Editor.allEditors.filter((e) => e !== editor);
+  public static remove(tool: AnnotationTool) {
+    Editor.allEditors = Editor.allEditors.filter((e) => e.tool !== tool);
   }
 
   public static draw() {

@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 
-export const usePoseConfig = defineStore({
-  id: 'poseConfig',
+export const useHandConfig = defineStore({
+  id: 'handConfig',
   state: () => ({}),
   actions: {}
 });
