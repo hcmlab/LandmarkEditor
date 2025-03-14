@@ -9,7 +9,8 @@ import { useAnnotationToolStore } from '@/stores/annotationToolStore';
 
 export class FileAnnotationHistoryContainer<T extends Point2D> {
   private readonly _histories: FileAnnotationHistory<T>[] = [];
-  private _selectedHistory: FileAnnotationHistory<T> | undefined = undefined;
+  private _selectedHistoryIndex: number = 0;
+  private readonly tools = useAnnotationToolStore();
 
   public histories(tool: AnnotationTool): (Graph<T> | null)[] {
     return this._histories.map((h) => h.get(tool));
@@ -20,11 +21,11 @@ export class FileAnnotationHistoryContainer<T extends Point2D> {
   }
 
   public get selectedHistory(): FileAnnotationHistory<T> | undefined {
-    return this._selectedHistory;
+    return this._histories[this._selectedHistoryIndex];
   }
 
   public set selectedHistory(h: FileAnnotationHistory<T>) {
-    this._selectedHistory = h;
+    this._selectedHistoryIndex = this._histories.indexOf(h);
   }
 
   public get empty(): boolean {
@@ -116,19 +117,30 @@ export class FileAnnotationHistoryContainer<T extends Point2D> {
     this.runDetection(selectedHistory);
   }
 
-  private runDetection(selectedHistory: FileAnnotationHistory<Point2D>) {
-    const tools = useAnnotationToolStore();
-    tools.getUsedTools()?.forEach((tool) => {
-      const model = tools.getModel(tool);
-      if (!model) return;
+  public resetSelectedHistoryForTool(tool: AnnotationTool) {
+    const h = this.selectedHistory;
+    if (!h) return;
 
-      model.detect(selectedHistory.file).then((graphs) => {
-        if (graphs === null) {
-          return;
-        }
-        selectedHistory.clear();
-        selectedHistory.merge(graphs, tool);
-      });
+    h.clearForTool(tool);
+    this.runDetectionForTool(h, tool);
+  }
+
+  private runDetection(selectedHistory: FileAnnotationHistory<T>) {
+    this.tools.getUsedTools()?.forEach((tool) => {
+      this.runDetectionForTool(selectedHistory, tool);
+    });
+  }
+
+  private runDetectionForTool(selectedHistory: FileAnnotationHistory<T>, tool: AnnotationTool) {
+    const model = this.tools.getModel(tool);
+    if (!model) return;
+
+    model.detect(selectedHistory.file).then((graphs) => {
+      if (graphs === null) {
+        return;
+      }
+      selectedHistory.clearForTool(tool);
+      selectedHistory.merge(graphs as Graph<T>[], tool);
     });
   }
 }

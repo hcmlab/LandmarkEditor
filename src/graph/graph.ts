@@ -34,10 +34,10 @@ export class Graph<P extends Point2D> {
    * @param pointIds points to delete
    * @private
    */
-  deletePoints(pointIds: number[]): void {
+  togglePoints(pointIds: number[]): void {
     this.points.forEach((point) => {
       if (pointIds.includes(point.id)) {
-        point.deleted = true;
+        point.deleted = !point.deleted;
       }
     });
   }

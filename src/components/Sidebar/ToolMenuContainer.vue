@@ -2,6 +2,7 @@
 import { computed, defineAsyncComponent } from 'vue';
 import { useAnnotationToolStore } from '@/stores/annotationToolStore';
 import { AnnotationTool } from '@/enums/annotationTool';
+import CommonToolOptions from '@/components/Sidebar/CommonToolOptions.vue';
 
 const annotationTools = useAnnotationToolStore();
 const tools = computed(() =>
@@ -31,9 +32,10 @@ function componentFromTool(tool: AnnotationTool) {
 <template>
   <div v-if="tools.length > 0" class="mt-1">
     <!-- The list was intended to be sortable,but the faders break with this - sortablejs-vue3 -->
-    <div v-for="element in tools" :key="element.id">
-      <div class="draggable" :key="element.id">
-        <BAccordion free class="mt-2 bg-light rounded-1">
+    <BAccordion free class="bg-light rounded-1">
+      <CommonToolOptions />
+      <div v-for="element in tools" :key="element.id">
+        <div class="draggable mt-2" :key="element.id">
           <BAccordionItem :title="element.tool" visible>
             <component
               v-if="componentFromTool(element.tool)"
@@ -51,9 +53,9 @@ function componentFromTool(tool: AnnotationTool) {
               Remove tool
             </BButton>
           </BAccordionItem>
-        </BAccordion>
+        </div>
       </div>
-    </div>
+    </BAccordion>
   </div>
 </template>
 

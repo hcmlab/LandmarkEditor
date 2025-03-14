@@ -4,6 +4,7 @@ import { AnnotationTool } from '@/enums/annotationTool';
 import { Editor } from '@/Editors/Editor';
 import { useHandConfig } from '@/stores/ToolSpecific/handConfig';
 import type { Point2D } from '@/graph/point2d';
+import type { FaceFeature } from '@/enums/faceFeature';
 
 export class HandEditor extends PointMoveEditor {
   private readonly editorConfigStore = useHandConfig();
@@ -32,11 +33,7 @@ export class HandEditor extends PointMoveEditor {
     this.drawEdges('00FF00', pointPairs);
   }
 
-  getDragDepth(): number {
-    return 0;
-  }
-
-  get tool(): AnnotationTool {
-    return AnnotationTool.Hand;
+  toggleFeature(_feature: FaceFeature) {
+    // No feature to process
   }
 }

@@ -1,12 +1,13 @@
 import * as fs from 'node:fs';
 import { mount } from '@vue/test-utils';
-import { describe, it, expect, beforeAll, vi } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import ThumbnailGallery from '../ThumbnailGallery.vue';
 import { FileAnnotationHistory } from '../../../cache/fileAnnotationHistory';
 import { Point2D } from '../../../graph/point2d';
 import { ImageFile } from '../../../imageFile';
 import { useAnnotationToolStore } from '../../../stores/annotationToolStore';
+import { AnnotationTool } from '../../../enums/annotationTool';
 
 // Mock fs.readFileSync to return a predetermined buffer
 vi.mock('node:fs', () => ({
@@ -43,7 +44,7 @@ beforeAll(async () => {
 
 describe('ThumbnailGallery', () => {
   it('should set selectedHistory to the current history upon selectThumbnail function execution', async () => {
-    expect(tools.getSelectedHistory()).toBeUndefined();
+    expect(tools.getSelectedHistory().isEmpty(AnnotationTool.FaceMesh)).toBeTruthy;
 
     const wrapper = mount(ThumbnailGallery);
 

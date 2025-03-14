@@ -9,6 +9,7 @@ import { MediapipePoseModel } from '@/model/mediapipePose';
 import { FileAnnotationHistoryContainer } from '@/cache/FileAnnotationHistoryContainer';
 import { Graph } from '@/graph/graph';
 import { FileAnnotationHistory } from '@/cache/fileAnnotationHistory';
+import type { FaceFeature } from '@/enums/faceFeature';
 
 export const useAnnotationToolStore = defineStore({
   id: 'annotationTool',
@@ -52,6 +53,13 @@ export const useAnnotationToolStore = defineStore({
     },
     resetCurrentHistory() {
       this.histories.resetSelectedHistory();
+    },
+    toggleFeature(feature: FaceFeature) {
+      const h = this.getSelectedHistory();
+      if (!h) {
+        return;
+      }
+      h.toggleFeature(feature);
     }
   }
 });

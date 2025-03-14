@@ -2,6 +2,12 @@ import { FaceLandmarker } from '@mediapipe/tasks-vision';
 import { type CanvasGradient, type CanvasPattern } from 'canvas';
 import {
   Connection,
+  FACE_FEATURE_LEFT_EYE,
+  FACE_FEATURE_LEFT_EYEBROW,
+  FACE_FEATURE_LIPS,
+  FACE_FEATURE_NOSE,
+  FACE_FEATURE_RIGHT_EYE,
+  FACE_FEATURE_RIGHT_EYEBROW,
   FACE_LANDMARKS_NOSE,
   UPDATED_LEFT_IRIS,
   UPDATED_RIGHT_IRIS
@@ -22,6 +28,7 @@ import {
   COLOR_EDGES_TESSELATION
 } from '@/Editors/EditorConstants';
 import type { Point2D } from '@/graph/point2d';
+import { FaceFeature } from '@/enums/faceFeature';
 
 export class FaceMeshEditor extends PointMoveEditor {
   private readonly editorConfigStore = useFaceMeshConfig();
@@ -33,10 +40,6 @@ export class FaceMeshEditor extends PointMoveEditor {
     });
 
     Editor.add(this);
-  }
-
-  get tool(): AnnotationTool {
-    return AnnotationTool.FaceMesh;
   }
 
   draw(): void {
@@ -71,7 +74,37 @@ export class FaceMeshEditor extends PointMoveEditor {
     }
   }
 
-  getDragDepth(): number {
-    return this.editorConfigStore.dragDepth;
+  toggleFeature(feature: FaceFeature) {
+    console.log('Mesh: ', feature);
+    const selectedHistory = this.tools.getSelectedHistory();
+    if (!selectedHistory) {
+      throw new Error('Failed to get histories on feature deletion.');
+    }
+    const graph = selectedHistory.get(this.tool);
+    console.log('Mesh: ', graph);
+    if (!graph) return;
+    switch (feature) {
+      case FaceFeature.Left_Eye:
+        graph.togglePoints(FACE_FEATURE_LEFT_EYE);
+        break;
+      case FaceFeature.Left_Eyebrow:
+        graph.togglePoints(FACE_FEATURE_LEFT_EYEBROW);
+        break;
+      case FaceFeature.Right_Eye:
+        graph.togglePoints(FACE_FEATURE_RIGHT_EYE);
+        break;
+      case FaceFeature.Right_Eyebrow:
+        graph.togglePoints(FACE_FEATURE_RIGHT_EYEBROW);
+        break;
+      case FaceFeature.Nose:
+        graph.togglePoints(FACE_FEATURE_NOSE);
+        break;
+      case FaceFeature.Mouth:
+        graph.togglePoints(FACE_FEATURE_LIPS);
+        break;
+      default:
+        throw new Error('No feature "' + feature + '" found to delete!');
+    }
+    selectedHistory.add(graph, this.tool);
   }
 }

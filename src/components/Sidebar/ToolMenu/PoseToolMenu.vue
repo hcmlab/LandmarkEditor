@@ -1,9 +1,3 @@
-<script setup lang="ts">
-import FeatureSelector from '@/components/Sidebar/ToolMenu/Pose/FeatureSelector.vue';
-</script>
+<script setup lang="ts"></script>
 
-<template>
-  <FeatureSelector />
-</template>
-
-<style scoped></style>
+<template><div></div></template>

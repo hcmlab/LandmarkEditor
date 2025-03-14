@@ -13,7 +13,9 @@ import {
   POINT_EXTENDED_WIDTH,
   POINT_WIDTH
 } from '@/Editors/EditorConstants';
-import type { AnnotationTool } from '@/enums/annotationTool';
+import { type AnnotationTool } from '@/enums/annotationTool';
+import { allFaceFeatures, type FaceFeature } from '@/enums/faceFeature';
+import { usePointMoveConfig } from '@/stores/ToolSpecific/pointMoveConfig';
 
 export interface PointPairs<T extends Point2D> {
   start: T;
@@ -22,6 +24,8 @@ export interface PointPairs<T extends Point2D> {
 
 export abstract class PointMoveEditor extends Editor {
   protected readonly tools = useAnnotationToolStore();
+  protected config = usePointMoveConfig();
+  private oldDeletedFeatures = new Set<FaceFeature>();
   private readonly childTool: AnnotationTool;
 
   protected constructor(childTool: AnnotationTool) {
@@ -44,11 +48,34 @@ export abstract class PointMoveEditor extends Editor {
         deep: true
       }
     );
-  }
 
-  abstract getDragDepth(): number;
+    watch(
+      () => this.tools.getSelectedHistory()?.deletedFeatures,
+      (value) => {
+        console.log(value, this.oldDeletedFeatures);
+        const changed = allFaceFeatures.filter(
+          (val) =>
+            (value?.has(val) && !this.oldDeletedFeatures.has(val)) ||
+            (!value?.has(val) && this.oldDeletedFeatures.has(val))
+        );
+        console.log(changed);
+        changed.forEach((val) => {
+          this.toggleFeature(val);
+        });
+        this.oldDeletedFeatures = new Set<FaceFeature>([...value]);
+      },
+      {
+        deep: true
+      }
+    );
+  }
+  abstract toggleFeature(feature: FaceFeature): void;
 
   private _graph: Graph<Point2D> = new Graph<Point2D>([]);
+
+  get tool(): AnnotationTool {
+    return this.childTool;
+  }
 
   protected get graph(): Graph<Point2D> {
     return this._graph;
@@ -75,7 +102,7 @@ export abstract class PointMoveEditor extends Editor {
     const deltaX = relativeMouseNormalized.x - selectedPoint.x;
     const deltaY = relativeMouseNormalized.y - selectedPoint.y;
     // eslint-disable-next-line no-loops/no-loops
-    for (let depth = 0; depth <= this.getDragDepth(); depth++) {
+    for (let depth = 0; depth <= this.config.dragDepth; depth++) {
       // Go through each depth step
       let tmpPoints: Point2D[] = [];
       neighbourPoints.forEach((neighbour) => {

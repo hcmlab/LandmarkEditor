@@ -1,4 +1,4 @@
-import { mount } from '@vue/test-utils';
+import { mount, VueWrapper } from '@vue/test-utils';
 import { describe, it, vi, expect, beforeEach } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 
@@ -11,7 +11,7 @@ import CentralCanvas from '../CentralCanvas.vue';
 import { useAnnotationToolStore } from '../../../stores/annotationToolStore';
 
 describe('AnnotationCanvas.vue', () => {
-  let wrapper;
+  let wrapper: VueWrapper;
 
   beforeEach(() => {
     setActivePinia(createPinia());
@@ -26,7 +26,12 @@ describe('AnnotationCanvas.vue', () => {
     const tools = useAnnotationToolStore();
 
     const mockFile = { file: 'test-image.png' };
-    tools.histories.selectedHistory = mockFile;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const histories = tools.histories as any;
+    histories._histories = [mockFile];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const selectedHistory = tools.histories.selectedHistory as any;
+    selectedHistory._file = mockFile;
 
     await wrapper.vm.$nextTick();
 

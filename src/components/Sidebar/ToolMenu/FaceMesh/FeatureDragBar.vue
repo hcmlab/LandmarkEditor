@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted } from 'vue';
-import { useFaceMeshConfig } from '@/stores/ToolSpecific/faceMeshConfig';
+import { usePointMoveConfig } from '@/stores/ToolSpecific/pointMoveConfig';
 
-const editorConfigStore = useFaceMeshConfig();
+const commonConfig = usePointMoveConfig();
 
 const featureDragValue = ref(0);
 
@@ -25,7 +25,7 @@ function addFeatureDrag(value: number): void {
 }
 
 watch(featureDragValue, (newValue) => {
-  editorConfigStore.dragDepth = newValue;
+  commonConfig.dragDepth = newValue;
 });
 </script>
 

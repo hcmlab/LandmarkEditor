@@ -42,8 +42,8 @@ watch(
     editors.value = editors.value.filter((editor) => !removed.has(editor.tool));
     added.forEach((tool) => {
       editors.value.push(fromTool(tool));
+      tools.histories.resetSelectedHistoryForTool(tool);
     });
-    tools.resetCurrentHistory();
     editors.value.forEach((editor) => {
       editor.onBackgroundLoaded();
     });
