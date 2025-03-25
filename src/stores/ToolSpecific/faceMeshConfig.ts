@@ -5,8 +5,10 @@ export const useFaceMeshConfig = defineStore({
 
   state: (): {
     showTesselation: boolean;
+    processing: boolean;
   } => ({
-    showTesselation: false
+    showTesselation: false,
+    processing: false
   }),
   actions: {}
 });

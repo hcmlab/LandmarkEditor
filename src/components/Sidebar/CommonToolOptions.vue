@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import FeatureDragBar from '@/components/Sidebar/ToolMenu/FaceMesh/FeatureDragBar.vue';
-import FeatureSelectorToolMenu from '@/components/Sidebar/ToolMenu/FeatureSelector.vue';
+import FeatureSelectorToolMenu from '@/components/Sidebar/ToolMenu/Common/FeatureSelector.vue';
 import { useAnnotationToolStore } from '@/stores/annotationToolStore';
 
 const tools = useAnnotationToolStore();

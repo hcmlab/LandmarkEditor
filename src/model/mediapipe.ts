@@ -11,13 +11,14 @@ import { ModelType } from '@/enums/modelType';
 import { type ImageFile } from '@/imageFile';
 import { AnnotationTool } from '@/enums/annotationTool';
 import { imageFromFile } from '@/util/imageFromFile';
-
+import { useFaceMeshConfig } from '@/stores/ToolSpecific/faceMeshConfig.ts';
 /**
  * Represents a model using MediaPipe for face landmark detection.
  * Implements the ModelApi interface for working with Point3D graphs.
  */
 export class MediapipeModel implements ModelApi<Point3D> {
   private meshLandmarker: FaceLandmarker | null = null;
+  private readonly config = useFaceMeshConfig();
 
   private async initialize(): Promise<void> {
     return FilesetResolver.forVisionTasks(
@@ -46,6 +47,7 @@ export class MediapipeModel implements ModelApi<Point3D> {
   }
 
   async detect(imageFile: ImageFile): Promise<Graph<Point3D>[] | null> {
+    this.config.processing = true;
     if (!this.meshLandmarker) await this.initialize();
     const img_src = await imageFromFile(imageFile.filePointer);
     return new Promise<Graph<Point3D>[] | null>((resolve, reject) => {
@@ -53,14 +55,17 @@ export class MediapipeModel implements ModelApi<Point3D> {
       image.onload = (_) => {
         const result = this.meshLandmarker?.detect(image);
         if (!result) {
+          this.config.processing = false;
           reject(new Error('Face(s) could not be detected!'));
           return;
         }
         const graph = MediapipeModel.processResult(result);
         if (!graph) {
+          this.config.processing = false;
           reject(new Error('Face(s) could not be detected!'));
           return;
         }
+        this.config.processing = false;
         resolve([graph]);
       };
       image.src = img_src;

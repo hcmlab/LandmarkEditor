@@ -2,6 +2,10 @@ import { defineStore } from 'pinia';
 
 export const useHandConfig = defineStore({
   id: 'handConfig',
-  state: () => ({}),
+  state: (): {
+    processing: boolean;
+  } => ({
+    processing: false
+  }),
   actions: {}
 });

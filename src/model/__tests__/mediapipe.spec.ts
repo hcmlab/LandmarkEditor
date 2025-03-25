@@ -1,8 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { createPinia, setActivePinia } from 'pinia';
 import { MediapipeModel } from '../mediapipe';
 import { ModelType } from '../../enums/modelType';
-
-const model = new MediapipeModel();
+import { ModelApi } from '../modelApi';
+import { Point2D } from '../../graph/point2d';
 
 /*
 // Define a function to convert ArrayBuffer to Blob
@@ -17,6 +18,12 @@ function blobToFile(blob: Blob, name: string) {
 */
 
 describe('MediapipeModel', () => {
+  let model: ModelApi<Point2D>;
+  beforeEach(() => {
+    setActivePinia(createPinia());
+    model = new MediapipeModel();
+  });
+
   it('should initialize MediapipeModel correctly', async () => {
     expect(model);
     expect(model.type()).eq(ModelType.mediapipeFaceMesh);

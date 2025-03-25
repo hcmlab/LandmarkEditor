@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import ButtonWithIcon from '@/components/MenuItems/ButtonWithIcon.vue';
-import { useAnnotationToolStore } from '@/stores/annotationToolStore';
-import { allBodyFeatures } from '@/enums/bodyFeature';
+import { useAnnotationToolStore } from '@/stores/annotationToolStore.ts';
+import { allBodyFeatures } from '@/enums/bodyFeature.ts';
 
 const tools = useAnnotationToolStore();
 </script>

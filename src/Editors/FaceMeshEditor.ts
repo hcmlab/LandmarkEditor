@@ -1,7 +1,5 @@
 import { FaceLandmarker } from '@mediapipe/tasks-vision';
-import { type CanvasGradient, type CanvasPattern } from 'canvas';
 import {
-  Connection,
   FACE_FEATURE_LEFT_EYE,
   FACE_FEATURE_LEFT_EYEBROW,
   FACE_FEATURE_LIPS,
@@ -15,7 +13,7 @@ import {
 import { useFaceMeshConfig } from '@/stores/ToolSpecific/faceMeshConfig';
 import { Editor } from '@/Editors/Editor';
 import { AnnotationTool } from '@/enums/annotationTool';
-import { PointMoveEditor, type PointPairs } from '@/Editors/PointMoveEditor';
+import { PointMoveEditor } from '@/Editors/PointMoveEditor';
 
 import {
   COLOR_EDGES_FACE_OVAL,
@@ -27,7 +25,6 @@ import {
   COLOR_EDGES_RIGHT_IRIS,
   COLOR_EDGES_TESSELATION
 } from '@/Editors/EditorConstants';
-import type { Point2D } from '@/graph/point2d';
 import { BodyFeature } from '@/enums/bodyFeature';
 
 export class FaceMeshEditor extends PointMoveEditor {
@@ -56,21 +53,6 @@ export class FaceMeshEditor extends PointMoveEditor {
     this.drawFaceTrait(FaceLandmarker.FACE_LANDMARKS_LEFT_EYE, COLOR_EDGES_LEFT_EYE);
     this.drawFaceTrait(UPDATED_LEFT_IRIS, COLOR_EDGES_LEFT_IRIS);
     this.drawFaceTrait(FACE_LANDMARKS_NOSE, COLOR_EDGES_NOSE);
-  }
-
-  private drawFaceTrait(
-    connections: Connection[],
-    color: string | CanvasGradient | CanvasPattern
-  ): void {
-    if (!this.graph) return;
-    const pointPairs: PointPairs<Point2D>[] = connections.map((connection) => {
-      return {
-        start: this.graph.getById(connection.start),
-        end: this.graph.getById(connection.end)
-      } as PointPairs<Point2D>;
-    });
-
-    this.drawEdges(color, pointPairs);
   }
 
   protected pointIdsFromFeature(feature: BodyFeature): number[] {

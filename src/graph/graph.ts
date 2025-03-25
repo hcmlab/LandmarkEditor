@@ -1,7 +1,5 @@
 import { FaceLandmarker } from '@mediapipe/tasks-vision';
 import { Point2D } from './point2d';
-import type { ModelApi } from '@/model/modelApi';
-import type { ImageFile } from '@/imageFile';
 import type { PointData } from '@/cache/fileAnnotationHistory';
 import { findNeighbourPointIds } from '@/graph/face_landmarks_features';
 
@@ -106,9 +104,5 @@ export class Graph<P extends Point2D> {
    */
   toDictArray(): PointData[] {
     return this.points.map((point) => point.toDict());
-  }
-
-  static async detect<P extends Point2D>(api: ModelApi<P>, file: ImageFile) {
-    return api.detect(file);
   }
 }

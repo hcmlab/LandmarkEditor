@@ -1,4 +1,5 @@
 import { watch } from 'vue';
+import type { CanvasGradient, CanvasPattern } from 'canvas';
 import { Editor } from '@/Editors/Editor';
 import { Perspective2D } from '@/graph/perspective2d';
 import { Point2D } from '@/graph/point2d';
@@ -16,6 +17,7 @@ import {
 import { type AnnotationTool } from '@/enums/annotationTool';
 import { allBodyFeatures, type BodyFeature } from '@/enums/bodyFeature';
 import { usePointMoveConfig } from '@/stores/ToolSpecific/pointMoveConfig';
+import { Connection } from '@/graph/face_landmarks_features.ts';
 
 export interface PointPairs<T extends Point2D> {
   start: T;
@@ -32,7 +34,7 @@ export abstract class PointMoveEditor extends Editor {
     super();
     this.childTool = childTool;
     watch(
-      () => this.tools.histories.selectedHistory,
+      () => this.tools.histories.selectedHistory?.get(this.childTool),
       () => {
         this.loadLatestAnnotation();
       },
@@ -67,6 +69,7 @@ export abstract class PointMoveEditor extends Editor {
       }
     );
   }
+
   toggleFeature(feature: BodyFeature) {
     const selectedHistory = this.tools.getSelectedHistory();
     if (!selectedHistory) {
@@ -207,8 +210,11 @@ export abstract class PointMoveEditor extends Editor {
   private loadLatestAnnotation() {
     const selectedHistory = this.tools.getSelectedHistory();
     if (!selectedHistory) return; // there is no error here. Just nothing to render.
-
+    console.log(selectedHistory);
     this.graph = selectedHistory.get(this.childTool);
+    if (this.graph.points.length === 0) {
+      return;
+    }
     Editor.draw();
   }
 
@@ -238,6 +244,27 @@ export abstract class PointMoveEditor extends Editor {
       );
       Editor.ctx.fill();
     }
+  }
+
+  protected drawFaceTrait(
+    connections: Connection[],
+    color: string | CanvasGradient | CanvasPattern
+  ): void {
+    if (!this.graph) return;
+    const pointPairs: PointPairs<Point2D>[] = connections
+      .filter(
+        (connection) =>
+          !this.getOverwrittenPoints().includes(connection.start) ||
+          !this.getOverwrittenPoints().includes(connection.end)
+      )
+      .map((connection) => {
+        return {
+          start: this.graph.getById(connection.start),
+          end: this.graph.getById(connection.end)
+        } as PointPairs<Point2D>;
+      });
+
+    this.drawEdges(color, pointPairs);
   }
 
   protected drawEdges(
@@ -271,10 +298,17 @@ export abstract class PointMoveEditor extends Editor {
 
   protected getOverwrittenPoints() {
     let res = [] as number[];
+    const h = this.tools.getSelectedHistory();
+    if (!h) {
+      return [] as number[];
+    }
 
     this.tools.tools.forEach((tool) => {
       if (tool === this.tool) return;
-
+      // Skip tool if the tool has no points
+      if (!h.get(tool) || h.get(tool)?.points.length === 0) {
+        return;
+      }
       Editor.toolProvidesFeatures(tool).forEach((feature: BodyFeature) => {
         res = res.concat(this.pointIdsFromFeature(feature));
       });

@@ -11,9 +11,11 @@ import { AnnotationTool } from '@/enums/annotationTool';
 import { ModelType } from '@/enums/modelType';
 import { imageFromFile } from '@/util/imageFromFile';
 import { findNeighbourPointIds } from '@/graph/face_landmarks_features';
+import { useHandConfig } from '@/stores/ToolSpecific/handConfig.ts';
 
 export class MediapipeHandModel implements ModelApi<Point2D> {
   private handLandmarker: HandLandmarker | null = null;
+  private readonly config = useHandConfig();
 
   private async initialize(): Promise<void> {
     return FilesetResolver.forVisionTasks(
@@ -42,6 +44,7 @@ export class MediapipeHandModel implements ModelApi<Point2D> {
   }
 
   async detect(imageFile: ImageFile): Promise<Graph<Point2D>[] | null> {
+    this.config.processing = true;
     if (!this.handLandmarker) await this.initialize();
     const parsed_img = await imageFromFile(imageFile.filePointer);
     return new Promise<Graph<Point2D>[]>((resolve, reject) => {
@@ -49,15 +52,18 @@ export class MediapipeHandModel implements ModelApi<Point2D> {
       img.onload = async () => {
         const res = this.handLandmarker?.detect(img);
         if (!res) {
+          this.config.processing = false;
           reject(new Error('Pose could not be detected!'));
           return;
         }
 
         const graph = await MediapipeHandModel.processResult(res);
         if (!graph) {
+          this.config.processing = false;
           reject(new Error('Pose could not be detected!'));
           return;
         }
+        this.config.processing = false;
         resolve([graph]);
       };
       img.src = parsed_img;
@@ -69,7 +75,6 @@ export class MediapipeHandModel implements ModelApi<Point2D> {
 
     const points = res.landmarks.flat().map((landmark, idx) => {
       const ids = Array.from(findNeighbourPointIds(idx, HandLandmarker.HAND_CONNECTIONS, 1));
-      console.log(landmark);
       return new Point2D(idx, landmark.x, landmark.y, ids);
     });
 

@@ -21,7 +21,7 @@ export class FileAnnotationHistoryContainer<T extends Point2D> {
   }
 
   public get selectedHistory(): FileAnnotationHistory<T> | undefined {
-    return this._histories[this._selectedHistoryIndex];
+    return this._histories[this._selectedHistoryIndex] as FileAnnotationHistory<T>;
   }
 
   public set selectedHistory(h: FileAnnotationHistory<T>) {
@@ -50,7 +50,8 @@ export class FileAnnotationHistoryContainer<T extends Point2D> {
     await Promise.all(
       apis.map(async (api) => {
         if (!api.tool()) return;
-        await Graph.detect(api, imageFile)
+        await api
+          .detect(imageFile)
           .then((result) => {
             if (result) {
               history.merge(result, api.tool());
@@ -106,41 +107,46 @@ export class FileAnnotationHistoryContainer<T extends Point2D> {
     return result;
   }
 
-  public resetSelectedHistory() {
+  public async resetSelectedHistory() {
     const selectedHistory = this.selectedHistory;
     if (!selectedHistory) {
       return;
     }
 
     if (!selectedHistory) return;
-
-    this.runDetection(selectedHistory);
+    await this.runDetection(selectedHistory);
   }
 
-  public resetSelectedHistoryForTool(tool: AnnotationTool) {
+  public async resetSelectedHistoryForTool(tool: AnnotationTool) {
     const h = this.selectedHistory;
     if (!h) return;
 
     h.clearForTool(tool);
-    this.runDetectionForTool(h, tool);
+    await this.runDetectionForTool(h, tool);
   }
 
-  private runDetection(selectedHistory: FileAnnotationHistory<T>) {
-    this.tools.getUsedTools()?.forEach((tool) => {
-      this.runDetectionForTool(selectedHistory, tool);
-    });
+  private async runDetection(selectedHistory: FileAnnotationHistory<T>) {
+    await Promise.all(
+      Array.from(this.tools.getUsedTools() || []).map(async (tool) => {
+        await this.runDetectionForTool(selectedHistory, tool);
+      })
+    );
   }
 
-  private runDetectionForTool(selectedHistory: FileAnnotationHistory<T>, tool: AnnotationTool) {
+  private async runDetectionForTool(
+    selectedHistory: FileAnnotationHistory<T>,
+    tool: AnnotationTool
+  ) {
     const model = this.tools.getModel(tool);
     if (!model) return;
 
-    model.detect(selectedHistory.file).then((graphs) => {
-      if (graphs === null) {
-        return;
-      }
-      selectedHistory.clearForTool(tool);
-      selectedHistory.merge(graphs as Graph<T>[], tool);
-    });
+    console.log(`Starting detection ${tool}`);
+    const graphs = await model.detect(selectedHistory.file);
+    if (graphs === null) {
+      return;
+    }
+    console.log(`Detected detection ${tool}`);
+    selectedHistory.clearForTool(tool);
+    selectedHistory.merge(graphs as Graph<T>[], tool);
   }
 }

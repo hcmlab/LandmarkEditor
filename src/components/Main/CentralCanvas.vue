@@ -31,7 +31,7 @@ onMounted(() => {
 
 watch(
   () => tools.tools,
-  (value) => {
+  async (value) => {
     const added = new Set([...value].filter((tool) => !oldTools.has(tool)));
     const removed = new Set([...oldTools].filter((tool) => !value.has(tool)));
 
@@ -40,10 +40,12 @@ watch(
       Editor.remove(editor.tool);
     });
     editors.value = editors.value.filter((editor) => !removed.has(editor.tool));
-    added.forEach((tool) => {
-      editors.value.push(fromTool(tool));
-      tools.histories.resetSelectedHistoryForTool(tool);
-    });
+    await Promise.all(
+      Array.from(added).map(async (tool) => {
+        editors.value.push(fromTool(tool));
+        await tools.histories.resetSelectedHistoryForTool(tool);
+      })
+    );
     editors.value.forEach((editor) => {
       editor.onBackgroundLoaded();
     });
