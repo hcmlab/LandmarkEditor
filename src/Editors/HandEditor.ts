@@ -3,8 +3,8 @@ import { PointMoveEditor, type PointPairs } from '@/Editors/PointMoveEditor';
 import { AnnotationTool } from '@/enums/annotationTool';
 import { Editor } from '@/Editors/Editor';
 import { useHandConfig } from '@/stores/ToolSpecific/handConfig';
-import type { Point2D } from '@/graph/point2d';
-import type { FaceFeature } from '@/enums/faceFeature';
+import { type Point2D } from '@/graph/point2d';
+import { type BodyFeature } from '@/enums/bodyFeature';
 
 export class HandEditor extends PointMoveEditor {
   private readonly editorConfigStore = useHandConfig();
@@ -23,17 +23,31 @@ export class HandEditor extends PointMoveEditor {
       this.drawPoint(point);
     });
 
-    const pointPairs = HandLandmarker.HAND_CONNECTIONS.map((connection) => {
+    let pointPairs = HandLandmarker.HAND_CONNECTIONS.map((connection) => {
       return {
         start: this.graph.getById(connection.start),
         end: this.graph.getById(connection.end)
       } as PointPairs<Point2D>;
     });
 
-    this.drawEdges('00FF00', pointPairs);
+    const single_hand_point_count = 21;
+
+    if (this.graph.points.length > single_hand_point_count) {
+      pointPairs = pointPairs.concat(
+        HandLandmarker.HAND_CONNECTIONS.map((connection) => {
+          return {
+            start: this.graph.getById(connection.start + single_hand_point_count),
+            end: this.graph.getById(connection.end + single_hand_point_count)
+          } as PointPairs<Point2D>;
+        })
+      );
+    }
+
+    this.drawEdges('#ff00ff', pointPairs);
   }
 
-  toggleFeature(_feature: FaceFeature) {
+  protected pointIdsFromFeature(_: BodyFeature): number[] {
+    return [];
     // No feature to process
   }
 }

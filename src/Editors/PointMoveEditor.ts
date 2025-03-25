@@ -14,7 +14,7 @@ import {
   POINT_WIDTH
 } from '@/Editors/EditorConstants';
 import { type AnnotationTool } from '@/enums/annotationTool';
-import { allFaceFeatures, type FaceFeature } from '@/enums/faceFeature';
+import { allBodyFeatures, type BodyFeature } from '@/enums/bodyFeature';
 import { usePointMoveConfig } from '@/stores/ToolSpecific/pointMoveConfig';
 
 export interface PointPairs<T extends Point2D> {
@@ -25,7 +25,7 @@ export interface PointPairs<T extends Point2D> {
 export abstract class PointMoveEditor extends Editor {
   protected readonly tools = useAnnotationToolStore();
   protected config = usePointMoveConfig();
-  private oldDeletedFeatures = new Set<FaceFeature>();
+  private oldDeletedFeatures = new Set<BodyFeature>();
   private readonly childTool: AnnotationTool;
 
   protected constructor(childTool: AnnotationTool) {
@@ -52,24 +52,33 @@ export abstract class PointMoveEditor extends Editor {
     watch(
       () => this.tools.getSelectedHistory()?.deletedFeatures,
       (value) => {
-        console.log(value, this.oldDeletedFeatures);
-        const changed = allFaceFeatures.filter(
+        const changed = allBodyFeatures.filter(
           (val) =>
             (value?.has(val) && !this.oldDeletedFeatures.has(val)) ||
             (!value?.has(val) && this.oldDeletedFeatures.has(val))
         );
-        console.log(changed);
         changed.forEach((val) => {
           this.toggleFeature(val);
         });
-        this.oldDeletedFeatures = new Set<FaceFeature>([...value]);
+        this.oldDeletedFeatures = new Set<BodyFeature>([...value]);
       },
       {
         deep: true
       }
     );
   }
-  abstract toggleFeature(feature: FaceFeature): void;
+  toggleFeature(feature: BodyFeature) {
+    const selectedHistory = this.tools.getSelectedHistory();
+    if (!selectedHistory) {
+      throw new Error('Failed to get histories on feature deletion.');
+    }
+    const graph = selectedHistory.get(this.tool);
+    if (!graph) return;
+    const points = this.pointIdsFromFeature(feature);
+    if (points.length === 0) return; // nothing to hide
+    graph.togglePoints(points);
+    selectedHistory.add(graph, this.tool);
+  }
 
   private _graph: Graph<Point2D> = new Graph<Point2D>([]);
 
@@ -259,4 +268,20 @@ export abstract class PointMoveEditor extends Editor {
       this.drawPoint(endPoint);
     });
   }
+
+  protected getOverwrittenPoints() {
+    let res = [] as number[];
+
+    this.tools.tools.forEach((tool) => {
+      if (tool === this.tool) return;
+
+      Editor.toolProvidesFeatures(tool).forEach((feature: BodyFeature) => {
+        res = res.concat(this.pointIdsFromFeature(feature));
+      });
+    });
+
+    return res;
+  }
+
+  protected abstract pointIdsFromFeature(feature: BodyFeature): number[];
 }

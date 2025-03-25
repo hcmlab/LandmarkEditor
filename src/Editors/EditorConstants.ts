@@ -25,3 +25,5 @@ export const LINE_WIDTH_DEFAULT = 2;
 export const POINT_WIDTH = 3;
 
 export const POINT_EXTENDED_WIDTH = 5;
+
+export const COLOR_EDGES_POSE = '#ffa500';

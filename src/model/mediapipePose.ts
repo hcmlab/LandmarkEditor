@@ -25,7 +25,7 @@ export class MediapipePoseModel implements ModelApi<Point2D> {
         PoseLandmarker.createFromOptions(filesetResolver, {
           baseOptions: {
             modelAssetPath:
-              'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/latest/pose_landmarker_lite.task',
+              'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/latest/pose_landmarker_full.task',
             delegate: undefined
           },
           minPoseDetectionConfidence: 0.5,
@@ -75,6 +75,7 @@ export class MediapipePoseModel implements ModelApi<Point2D> {
         const points = await Promise.all(
           landmarks.map(async (dict, idx) => {
             const ids = Array.from(findNeighbourPointIds(idx, PoseLandmarker.POSE_CONNECTIONS, 1));
+            console.log(dict);
             return new Point2D(idx, dict.x, dict.y, ids);
           })
         );

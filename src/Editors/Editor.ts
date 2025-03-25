@@ -2,6 +2,7 @@ import $ from 'jquery';
 import type { ImageFile } from '@/imageFile';
 import { AnnotationTool } from '@/enums/annotationTool';
 import { imageFromFile } from '@/util/imageFromFile';
+import { BodyFeature } from '@/enums/bodyFeature';
 
 export abstract class Editor {
   protected static canvas: HTMLCanvasElement;
@@ -201,5 +202,30 @@ export abstract class Editor {
     ctx.fillStyle = color;
     ctx.arc(x, y, radius, 0, Math.PI * 2);
     ctx.fill();
+  }
+
+  /**
+   * Returns a list of features, where the model takes precedence. For example because it provides more details.
+   * @param tool tool to check
+   * @protected
+   */
+  protected static toolProvidesFeatures(tool: AnnotationTool) {
+    switch (tool) {
+      case AnnotationTool.BackgroundDrawer:
+        return [];
+      case AnnotationTool.FaceMesh:
+        return [
+          BodyFeature.Nose,
+          BodyFeature.Mouth,
+          BodyFeature.Right_Eye,
+          BodyFeature.Right_Eyebrow,
+          BodyFeature.Left_Eye,
+          BodyFeature.Left_Eyebrow
+        ];
+      case AnnotationTool.Hand:
+        return [BodyFeature.Left_Hand, BodyFeature.Right_Hand];
+      case AnnotationTool.Pose:
+        return [];
+    }
   }
 }

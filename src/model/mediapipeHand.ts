@@ -28,7 +28,7 @@ export class MediapipeHandModel implements ModelApi<Point2D> {
           },
           runningMode: 'IMAGE',
           minTrackingConfidence: 0.5,
-          numHands: 1,
+          numHands: 2,
           minHandDetectionConfidence: 0.5,
           minHandPresenceConfidence: 0.5
         })
@@ -67,19 +67,15 @@ export class MediapipeHandModel implements ModelApi<Point2D> {
   private static async processResult(res: HandLandmarkerResult): Promise<Graph<Point2D> | null> {
     if (res.landmarks.length == 0) return null;
 
-    const graphs = await Promise.all(
-      res.landmarks.map(async (landmarks) => {
-        const points = await Promise.all(
-          landmarks.map(async (dict, idx) => {
-            const ids = Array.from(findNeighbourPointIds(idx, HandLandmarker.HAND_CONNECTIONS, 1));
-            return new Point2D(idx, dict.x, dict.y, ids);
-          })
-        );
-        return new Graph(points);
-      })
-    );
-    if (graphs) {
-      return graphs[0];
+    const points = res.landmarks.flat().map((landmark, idx) => {
+      const ids = Array.from(findNeighbourPointIds(idx, HandLandmarker.HAND_CONNECTIONS, 1));
+      console.log(landmark);
+      return new Point2D(idx, landmark.x, landmark.y, ids);
+    });
+
+    const graph = new Graph(points);
+    if (points) {
+      return graph;
     }
     return null;
   }

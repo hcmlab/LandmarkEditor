@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import ButtonWithIcon from '@/components/MenuItems/ButtonWithIcon.vue';
 import { useAnnotationToolStore } from '@/stores/annotationToolStore';
-import { allFaceFeatures } from '@/enums/faceFeature';
+import { allBodyFeatures } from '@/enums/bodyFeature';
 
 const tools = useAnnotationToolStore();
 </script>
@@ -15,7 +15,7 @@ const tools = useAnnotationToolStore();
       </b>
     </div>
   </div>
-  <div v-for="feature in allFaceFeatures" :key="feature">
+  <div v-for="feature in allBodyFeatures" :key="feature">
     <button-with-icon
       :text="feature"
       :icon="

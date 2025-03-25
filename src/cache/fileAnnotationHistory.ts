@@ -3,7 +3,7 @@ import { Graph } from '@/graph/graph';
 import { ImageFile } from '@/imageFile';
 import { SaveStatus } from '@/enums/saveStatus';
 import { allAnnotationTools, AnnotationTool } from '@/enums/annotationTool';
-import type { FaceFeature } from '@/enums/faceFeature';
+import type { BodyFeature } from '@/enums/bodyFeature';
 
 export interface PointData {
   deleted: boolean;
@@ -28,7 +28,7 @@ export class FileAnnotationHistory<T extends Point2D> {
   private readonly _currentHistoryIndex: Map<AnnotationTool, number> = new Map();
   private readonly _file: ImageFile;
   private _status: SaveStatus;
-  private readonly _deletedFeatures: Set<FaceFeature> = new Set<FaceFeature>();
+  private readonly _deletedFeatures: Set<BodyFeature> = new Set<BodyFeature>();
 
   /**
    * Creates a new FileAnnotationHistory instance.
@@ -78,7 +78,7 @@ export class FileAnnotationHistory<T extends Point2D> {
     this._currentHistoryIndex.set(tool, value);
   }
 
-  toggleFeature(feature: FaceFeature) {
+  toggleFeature(feature: BodyFeature) {
     if (this._deletedFeatures.has(feature)) {
       this._deletedFeatures.delete(feature);
     } else {

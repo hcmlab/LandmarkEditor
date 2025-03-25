@@ -28,7 +28,7 @@ import {
   COLOR_EDGES_TESSELATION
 } from '@/Editors/EditorConstants';
 import type { Point2D } from '@/graph/point2d';
-import { FaceFeature } from '@/enums/faceFeature';
+import { BodyFeature } from '@/enums/bodyFeature';
 
 export class FaceMeshEditor extends PointMoveEditor {
   private readonly editorConfigStore = useFaceMeshConfig();
@@ -62,49 +62,35 @@ export class FaceMeshEditor extends PointMoveEditor {
     connections: Connection[],
     color: string | CanvasGradient | CanvasPattern
   ): void {
-    if (this.graph) {
-      const pointPairs: PointPairs<Point2D>[] = connections.map((connection) => {
-        return {
-          start: this.graph.getById(connection.start),
-          end: this.graph.getById(connection.end)
-        } as PointPairs<Point2D>;
-      });
+    if (!this.graph) return;
+    const pointPairs: PointPairs<Point2D>[] = connections.map((connection) => {
+      return {
+        start: this.graph.getById(connection.start),
+        end: this.graph.getById(connection.end)
+      } as PointPairs<Point2D>;
+    });
 
-      this.drawEdges(color, pointPairs);
-    }
+    this.drawEdges(color, pointPairs);
   }
 
-  toggleFeature(feature: FaceFeature) {
-    console.log('Mesh: ', feature);
-    const selectedHistory = this.tools.getSelectedHistory();
-    if (!selectedHistory) {
-      throw new Error('Failed to get histories on feature deletion.');
-    }
-    const graph = selectedHistory.get(this.tool);
-    console.log('Mesh: ', graph);
-    if (!graph) return;
+  protected pointIdsFromFeature(feature: BodyFeature): number[] {
     switch (feature) {
-      case FaceFeature.Left_Eye:
-        graph.togglePoints(FACE_FEATURE_LEFT_EYE);
-        break;
-      case FaceFeature.Left_Eyebrow:
-        graph.togglePoints(FACE_FEATURE_LEFT_EYEBROW);
-        break;
-      case FaceFeature.Right_Eye:
-        graph.togglePoints(FACE_FEATURE_RIGHT_EYE);
-        break;
-      case FaceFeature.Right_Eyebrow:
-        graph.togglePoints(FACE_FEATURE_RIGHT_EYEBROW);
-        break;
-      case FaceFeature.Nose:
-        graph.togglePoints(FACE_FEATURE_NOSE);
-        break;
-      case FaceFeature.Mouth:
-        graph.togglePoints(FACE_FEATURE_LIPS);
-        break;
-      default:
-        throw new Error('No feature "' + feature + '" found to delete!');
+      case BodyFeature.Left_Eye:
+        return FACE_FEATURE_LEFT_EYE;
+      case BodyFeature.Left_Eyebrow:
+        return FACE_FEATURE_LEFT_EYEBROW;
+      case BodyFeature.Right_Eye:
+        return FACE_FEATURE_RIGHT_EYE;
+      case BodyFeature.Right_Eyebrow:
+        return FACE_FEATURE_RIGHT_EYEBROW;
+      case BodyFeature.Nose:
+        return FACE_FEATURE_NOSE;
+      case BodyFeature.Mouth:
+        return FACE_FEATURE_LIPS;
+      case BodyFeature.Left_Hand:
+        return [];
+      case BodyFeature.Right_Hand:
+        return [];
     }
-    selectedHistory.add(graph, this.tool);
   }
 }
