@@ -8,13 +8,12 @@ import { Point2D } from '@/graph/point2d';
 import type { ImageFile } from '@/imageFile';
 import { Graph } from '@/graph/graph';
 import { AnnotationTool } from '@/enums/annotationTool';
-import { ModelType } from '@/enums/modelType';
 import { imageFromFile } from '@/util/imageFromFile';
 import { findNeighbourPointIds } from '@/graph/face_landmarks_features';
 import { useHandConfig } from '@/stores/ToolSpecific/handConfig.ts';
 
 export class MediapipeHandModel implements ModelApi<Point2D> {
-  private handLandmarker: HandLandmarker | null = null;
+  private handLandmarker: HandLandmarker | undefined = undefined;
   private readonly config = useHandConfig();
 
   private async initialize(): Promise<void> {
@@ -32,7 +31,7 @@ export class MediapipeHandModel implements ModelApi<Point2D> {
       });
   }
 
-  async detect(imageFile: ImageFile): Promise<Graph<Point2D>[] | null> {
+  async detect(imageFile: ImageFile): Promise<Graph<Point2D>[] | undefined> {
     this.config.processing = true;
     if (!this.handLandmarker) await this.initialize();
     const parsed_img = await imageFromFile(imageFile.filePointer);
@@ -63,8 +62,10 @@ export class MediapipeHandModel implements ModelApi<Point2D> {
     });
   }
 
-  private static async processResult(res: HandLandmarkerResult): Promise<Graph<Point2D> | null> {
-    if (res.landmarks.length == 0) return null;
+  private static async processResult(
+    res: HandLandmarkerResult
+  ): Promise<Graph<Point2D> | undefined> {
+    if (res.landmarks.length == 0) return undefined;
 
     const points = res.landmarks.flat().map((landmark, idx) => {
       const ids = Array.from(findNeighbourPointIds(idx, HandLandmarker.HAND_CONNECTIONS, 1));
@@ -75,7 +76,7 @@ export class MediapipeHandModel implements ModelApi<Point2D> {
     if (points) {
       return graph;
     }
-    return null;
+    return undefined;
   }
 
   updateSettings() {
@@ -87,8 +88,8 @@ export class MediapipeHandModel implements ModelApi<Point2D> {
     return AnnotationTool.Hand;
   }
 
-  type(): ModelType {
-    return ModelType.other;
+  get shouldUpload(): boolean {
+    return false;
   }
 
   async uploadAnnotations(_: AnnotationData): Promise<void | Response> {

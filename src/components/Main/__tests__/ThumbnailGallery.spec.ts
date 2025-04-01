@@ -3,8 +3,6 @@ import { mount } from '@vue/test-utils';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import ThumbnailGallery from '../ThumbnailGallery.vue';
-import { FileAnnotationHistory } from '../../../cache/fileAnnotationHistory';
-import { Point2D } from '../../../graph/point2d';
 import { ImageFile } from '../../../imageFile';
 import { useAnnotationToolStore } from '../../../stores/annotationToolStore';
 import { AnnotationTool } from '../../../enums/annotationTool';
@@ -39,7 +37,7 @@ beforeAll(async () => {
   image_file = await ImageFile.create(file);
   setActivePinia(createPinia());
   tools = useAnnotationToolStore();
-  tools.histories.push(new FileAnnotationHistory<Point2D>(image_file, 25));
+  tools.histories.add(image_file, []);
 });
 
 describe('ThumbnailGallery', () => {

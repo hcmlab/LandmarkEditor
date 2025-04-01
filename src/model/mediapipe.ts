@@ -7,7 +7,6 @@ import type { AnnotationData, ModelApi } from './modelApi';
 import { findNeighbourPointIds } from '@/graph/face_landmarks_features';
 import { Graph } from '@/graph/graph';
 import { Point3D } from '@/graph/point3d';
-import { ModelType } from '@/enums/modelType';
 import { type ImageFile } from '@/imageFile';
 import { AnnotationTool } from '@/enums/annotationTool';
 import { imageFromFile } from '@/util/imageFromFile';
@@ -17,7 +16,7 @@ import { useFaceMeshConfig } from '@/stores/ToolSpecific/faceMeshConfig.ts';
  * Implements the ModelApi interface for working with Point3D graphs.
  */
 export class MediapipeModel implements ModelApi<Point3D> {
-  private meshLandmarker: FaceLandmarker | null = null;
+  private meshLandmarker: FaceLandmarker | undefined = undefined;
   private readonly config = useFaceMeshConfig();
 
   private async initialize(): Promise<void> {
@@ -35,11 +34,11 @@ export class MediapipeModel implements ModelApi<Point3D> {
       });
   }
 
-  async detect(imageFile: ImageFile): Promise<Graph<Point3D>[] | null> {
+  async detect(imageFile: ImageFile): Promise<Graph<Point3D>[] | undefined> {
     this.config.processing = true;
     if (!this.meshLandmarker) await this.initialize();
     const img_src = await imageFromFile(imageFile.filePointer);
-    return new Promise<Graph<Point3D>[] | null>((resolve, reject) => {
+    return new Promise<Graph<Point3D>[] | undefined>((resolve, reject) => {
       const image = new Image();
       image.onload = (_) => {
         const result = this.meshLandmarker?.detect(image);
@@ -86,7 +85,7 @@ export class MediapipeModel implements ModelApi<Point3D> {
     if (graphs) {
       return graphs[0];
     }
-    return null;
+    return undefined;
   }
 
   updateSettings(): Promise<void> {
@@ -98,8 +97,8 @@ export class MediapipeModel implements ModelApi<Point3D> {
     return Promise.resolve();
   }
 
-  type(): ModelType {
-    return ModelType.mediapipeFaceMesh;
+  get shouldUpload(): boolean {
+    return false;
   }
 
   tool(): AnnotationTool {

@@ -1,7 +1,7 @@
 import { FaceLandmarker } from '@mediapipe/tasks-vision';
 import { Point2D } from './point2d';
-import type { PointData } from '@/cache/fileAnnotationHistory';
 import { findNeighbourPointIds } from '@/graph/face_landmarks_features';
+import type { PointData } from '@/graph/serialisedData.ts';
 
 /**
  * Represents a graph of points in a 2D space.

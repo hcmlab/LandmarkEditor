@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { BModal } from 'bootstrap-vue-next';
-import { ModelType } from '@/enums/modelType';
+import { ModelType } from '@/enums/modelType.ts';
 
 // Props and Emits
 const props = defineProps<{ modelValue: boolean }>();

@@ -20,7 +20,6 @@ function selectThumbnail(file: ImageFile): void {
     file.filePointer.name === oldHistory.file.filePointer.name &&
     oldHistory.status !== SaveStatus.unedited
   ) {
-    oldHistory.status = SaveStatus.saved;
     const graphData = oldHistory.graphData(AnnotationTool.FaceMesh);
     if (!graphData) return;
     const model = tools.getModel(AnnotationTool.FaceMesh);
@@ -32,6 +31,7 @@ function selectThumbnail(file: ImageFile): void {
       .catch((reason) => {
         throw new Error(`Posting history failed: ${reason}`);
       });
+    oldHistory.markAsSent();
   }
 
   /* other image selected */

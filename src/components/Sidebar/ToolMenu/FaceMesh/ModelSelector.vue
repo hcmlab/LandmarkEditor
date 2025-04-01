@@ -2,13 +2,13 @@
 import * as bootstrap from 'bootstrap'; // import statically - don't grab it from a cdn
 import $ from 'jquery';
 import { ref } from 'vue';
-import { ModelType } from '@/enums/modelType';
 import { WebServiceModel } from '@/model/webservice';
 import { MediapipeModel } from '@/model/mediapipe';
 import { urlError } from '@/enums/urlError';
 import WebserviceSelectModal from '@/components/Modals/WebserviceSelectModal.vue';
 import { useAnnotationToolStore } from '@/stores/annotationToolStore';
 import { AnnotationTool } from '@/enums/annotationTool';
+import { ModelType } from '@/enums/modelType.ts';
 
 const tools = useAnnotationToolStore();
 const showModal = ref(false);

@@ -1,9 +1,8 @@
 import { Point2D } from '@/graph/point2d';
-import type { ModelType } from '@/enums/modelType';
 import type { ImageFile } from '@/imageFile';
-import { type GraphData } from '@/cache/fileAnnotationHistory';
 import type { Graph } from '@/graph/graph';
 import type { AnnotationTool } from '@/enums/annotationTool';
+import type { GraphData } from '@/graph/serialisedData.ts';
 
 export interface AnnotationData {
   [key: string]: GraphData | string;
@@ -19,7 +18,7 @@ export interface ModelApi<P extends Point2D> {
    * @param {ImageFile} imageFile - The image file to analyze.
    * @returns {Promise<Graph<Point2D>>} - A promise resolving to a graph of detected face landmarks.
    */
-  detect(imageFile: ImageFile): Promise<Graph<P>[] | null>;
+  detect(imageFile: ImageFile): Promise<Graph<P>[] | undefined>;
 
   /**
    * Uploads annotations.
@@ -30,7 +29,7 @@ export interface ModelApi<P extends Point2D> {
 
   updateSettings(): Promise<void>;
 
-  type(): ModelType;
+  get shouldUpload(): boolean;
 
   tool(): AnnotationTool;
 }

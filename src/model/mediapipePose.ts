@@ -6,7 +6,6 @@ import {
 import type { AnnotationData, ModelApi } from '@/model/modelApi';
 import { Point2D } from '@/graph/point2d';
 import type { ImageFile } from '@/imageFile';
-import { ModelType } from '@/enums/modelType';
 import { imageFromFile } from '@/util/imageFromFile';
 import { Graph } from '@/graph/graph';
 import { findNeighbourPointIds } from '@/graph/face_landmarks_features';
@@ -28,7 +27,7 @@ export const poseModelTypes: PoseModelType[] = [
 ];
 
 export class MediapipePoseModel implements ModelApi<Point2D> {
-  private poseLandmarker: PoseLandmarker | null = null;
+  private poseLandmarker: PoseLandmarker | undefined = undefined;
   private readonly config = usePoseConfig();
 
   private async initialize(): Promise<void> {
@@ -46,7 +45,7 @@ export class MediapipePoseModel implements ModelApi<Point2D> {
       });
   }
 
-  async detect(imageFile: ImageFile): Promise<Graph<Point2D>[] | null> {
+  async detect(imageFile: ImageFile): Promise<Graph<Point2D>[] | undefined> {
     this.config.processing = true;
     if (!this.poseLandmarker) await this.initialize();
     const parsed_img = await imageFromFile(imageFile.filePointer);
@@ -73,8 +72,10 @@ export class MediapipePoseModel implements ModelApi<Point2D> {
     });
   }
 
-  private static async processResult(res: PoseLandmarkerResult): Promise<Graph<Point2D> | null> {
-    if (res.landmarks.length == 0) return null;
+  private static async processResult(
+    res: PoseLandmarkerResult
+  ): Promise<Graph<Point2D> | undefined> {
+    if (res.landmarks.length == 0) return undefined;
 
     const graphs = await Promise.all(
       res.landmarks.map(async (landmarks) => {
@@ -90,15 +91,15 @@ export class MediapipePoseModel implements ModelApi<Point2D> {
     if (graphs) {
       return graphs[0];
     }
-    return null;
+    return undefined;
   }
 
   async updateSettings(): Promise<void> {
     return this.initialize();
   }
 
-  type(): ModelType {
-    return ModelType.other;
+  get shouldUpload(): boolean {
+    return false;
   }
 
   tool(): AnnotationTool {

@@ -1,12 +1,12 @@
 import { getFingerprint } from '@thumbmarkjs/thumbmarkjs';
 import type { AnnotationData, ModelApi } from './modelApi';
 import { Point3D } from '@/graph/point3d';
-import { ModelType } from '@/enums/modelType';
 import { urlError } from '@/enums/urlError';
 import type { ImageFile } from '@/imageFile';
-import { FileAnnotationHistory, type GraphData } from '@/cache/fileAnnotationHistory';
+import { FileAnnotationHistory } from '@/cache/fileAnnotationHistory';
 import type { Graph } from '@/graph/graph';
 import { AnnotationTool } from '@/enums/annotationTool';
+import type { GraphData } from '@/graph/serialisedData.ts';
 
 /**
  * Represents a model using a WebService for face landmark detection.
@@ -22,7 +22,7 @@ export class WebServiceModel implements ModelApi<Point3D> {
     this.url = url;
   }
 
-  async detect(imageFile: ImageFile): Promise<Graph<Point3D>[] | null> {
+  async detect(imageFile: ImageFile): Promise<Graph<Point3D>[] | undefined> {
     const formData: FormData = new FormData();
     formData.append('file', imageFile.filePointer);
 
@@ -43,7 +43,7 @@ export class WebServiceModel implements ModelApi<Point3D> {
             json,
             imageFile,
             (id, neighbors) => new Point3D(id, 0, 0, 0, neighbors)
-          )
+          )?.get(AnnotationTool.FaceMesh)
         )
         .catch((err: Error) => {
           throw new Error(err.message);
@@ -115,8 +115,8 @@ export class WebServiceModel implements ModelApi<Point3D> {
     return Promise.resolve();
   }
 
-  type(): ModelType {
-    return ModelType.custom;
+  get shouldUpload(): boolean {
+    return true;
   }
 
   tool(): AnnotationTool {

@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { MediapipeModel } from '../mediapipe';
-import { ModelType } from '../../enums/modelType';
 import { ModelApi } from '../modelApi';
 import { Point2D } from '../../graph/point2d';
 
@@ -26,7 +25,7 @@ describe('MediapipeModel', () => {
 
   it('should initialize MediapipeModel correctly', async () => {
     expect(model);
-    expect(model.type()).eq(ModelType.mediapipeFaceMesh);
+    expect(model.shouldUpload).eq(false);
   });
 
   it('should try to detect image correctly', async () => {
@@ -57,6 +56,6 @@ describe('MediapipeModel', () => {
   });
 
   it('should return correct model type', async () => {
-    expect(model.type()).eq(ModelType.mediapipeFaceMesh);
+    expect(model.shouldUpload).eq(false);
   });
 });

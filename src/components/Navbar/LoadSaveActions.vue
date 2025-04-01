@@ -2,7 +2,6 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { Point3D } from '@/graph/point3d';
 import { Point2D } from '@/graph/point2d';
-import { ModelType } from '@/enums/modelType';
 import ButtonWithIcon from '@/components/MenuItems/ButtonWithIcon.vue';
 import getFormattedTimestamp from '@/util/formattedTimestamp';
 import { FileAnnotationHistory } from '@/cache/fileAnnotationHistory';
@@ -27,27 +26,28 @@ function openAnnotation() {
 function saveAnnotation(download: boolean): void {
   const h = tools.histories;
   if (!h) {
-    throw new Error("Failed to retrieve histories for saving")
+    throw new Error('Failed to retrieve histories for saving');
   }
   if (h.empty) {
     return;
   }
 
-  const result = h.collectAnnotations(AnnotationTool.FaceMesh);
+  const result = h.collectAnnotations();
   if (Object.keys(result).length <= 0) {
     return;
   }
 
   const model = tools.getModel(AnnotationTool.FaceMesh);
   if (!model) {
-    throw new Error("Failed to retrieve model during annotation upload.")
+    throw new Error('Failed to retrieve model during annotation upload.');
   }
 
   model.uploadAnnotations(result);
 
   if (!download) return;
 
-  const dataStr: string = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(result));
+  const dataStr: string =
+    'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(result));
   const a: HTMLAnchorElement = document.createElement('a');
   a.id = 'download-all';
   a.href = dataStr;
@@ -65,30 +65,61 @@ function onFileLoad(reader: FileReader): void {
     }
     const sha = rawData.sha256;
     if (!sha) {
-      throw new Error(`Tried to load annotation data for matching filename ${filename} but not matching hash`);
+      throw new Error(
+        `Tried to load annotation data for matching filename ${filename} but not matching hash`
+      );
     }
     const histories = tools.histories;
     if (!histories) {
-      throw new Error("Failed to retrieve histories for loading annotation data");
+      throw new Error('Failed to retrieve histories for loading annotation data');
     }
-    const history = histories.find(filename, sha)
+    const history = histories.find(filename, sha);
     if (!history) {
       throw new Error(`Tried to load annotation data for nonexistent file: ${filename}`);
     }
-    let h = FileAnnotationHistory.fromJson(rawData, history.file,(id, neighbors) => new Point3D(id, 0, 0, 0, neighbors));
+    let h = FileAnnotationHistory.fromJson(
+      rawData,
+      history.file,
+      (id, neighbors) => new Point3D(id, 0, 0, 0, neighbors)
+    );
     if (!h) {
       throw new Error(`Failed to parse histories for ${filename}`);
     }
     history.clear();
-    history.merge(h, AnnotationTool.FaceMesh);
+    history.mergeMultipleTools(h);
   });
+}
+
+function handleLeave(event: BeforeUnloadEvent) {
+  const histories = tools.getAllHistories();
+
+  if (!Array.isArray(histories)) {
+    throw new Error('Failed to retrieve histories for saving during shutdown');
+  }
+
+  histories.forEach((h: FileAnnotationHistory<Point2D>) => {
+    tools.getUsedTools().forEach((tool) => {
+      const model = tools.getModel(tool);
+      if (!model) {
+        throw new Error('Failed to retrieve model for saving during shutdown');
+      }
+      if (h.status === SaveStatus.edited && model.shouldUpload) {
+        saveAnnotation(false);
+      }
+    });
+  });
+
+  if (tools.histories.unsaved.length > 0) {
+    event.preventDefault();
+    event.returnValue = '';
+  }
 }
 
 onMounted(() => {
   imageInput.value.onchange = () => {
     if (imageInput.value.files) {
       const files: File[] = Array.from(imageInput.value.files);
-      files.forEach((f) => tools.histories.add(f, tools.getUsedModels()))
+      files.forEach((f) => tools.histories.add(f, tools.getUsedModels()));
     }
   };
 
@@ -100,38 +131,24 @@ onMounted(() => {
     reader.onload = (_) => onFileLoad(reader);
     reader.readAsText(annotationFile);
   };
-})
 
-// This is completely intended. Since returning anything triggers a popup
+  window.addEventListener('beforeunload', handleLeave);
+});
+
 onBeforeUnmount(() => {
-  const histories = tools.getAllHistories();
-
-  if (!Array.isArray(histories)) {
-    throw new Error("Failed to retrieve histories for saving during shutdown");
-  }
-
-  histories.forEach((h: FileAnnotationHistory<Point2D>) => {
-    // @ts-expect-error the error complains that not all code paths return something.
-    tools.getUsedTools().forEach((tool) => {
-      const model = tools.getModel(tool);
-      if (!model) {
-        throw new Error("Failed to retrieve model for saving during shutdown");
-      }
-      if (h.status !== SaveStatus.saved) {
-        if (model?.type() === ModelType.custom) {
-          saveAnnotation(false);
-        } else {
-          return '?';
-        }
-      }
-    })
-  })
+  window.removeEventListener('beforeunload', handleLeave);
 });
 </script>
 
 <template>
-  <input id=image-input type=file accept=image/* multiple hidden ref="imageInput">
-  <input id=annotation-input type=file accept=.json,application/json hidden ref="annotationInput">
+  <input id="image-input" type="file" accept="image/*" multiple hidden ref="imageInput" />
+  <input
+    id="annotation-input"
+    type="file"
+    accept=".json,application/json"
+    hidden
+    ref="annotationInput"
+  />
   <BNavItemDropdown
     text="File"
     class="pt-1"

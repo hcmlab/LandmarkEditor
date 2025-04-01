@@ -3,7 +3,6 @@ import type { CanvasGradient, CanvasPattern } from 'canvas';
 import { Editor } from '@/Editors/Editor';
 import { Perspective2D } from '@/graph/perspective2d';
 import { Point2D } from '@/graph/point2d';
-import { SaveStatus } from '@/enums/saveStatus';
 import { Graph } from '@/graph/graph';
 import { useAnnotationToolStore } from '@/stores/annotationToolStore';
 import {
@@ -206,7 +205,6 @@ export abstract class PointMoveEditor extends Editor {
       throw new Error('Could not retrieve selected history');
     }
     selected_history.add(this.graph, this.childTool);
-    selected_history.status = SaveStatus.edited;
   }
 
   private loadLatestAnnotation() {

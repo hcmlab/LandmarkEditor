@@ -38,10 +38,16 @@ export class FileAnnotationHistoryContainer<T extends Point2D> {
    */
   public get unsaved(): FileAnnotationHistory<Point2D>[] {
     return this._histories.filter(
-      (file) => file.status === SaveStatus.saved
+      (file) => file.status === SaveStatus.edited
     ) as FileAnnotationHistory<Point2D>[];
   }
 
+  /**
+   * Creates a new history for the provided file and runs the detection for provided APIs.
+   * @param file - The new file
+   * @param apis - Currently selected APIs
+   * @throws {Error} - If the file is not a valid image or if the detection fails
+   */
   public async add(file: File, apis: ModelApi<T>[]): Promise<void> {
     const imageFile = await ImageFile.create(file);
     if (!imageFile) {
@@ -78,21 +84,17 @@ export class FileAnnotationHistoryContainer<T extends Point2D> {
     ) as FileAnnotationHistory<T>;
   }
 
-  public push(h: FileAnnotationHistory<T>) {
-    this._histories.push(h);
-  }
-
   /**
    * Collects and processes annotation data from the annotation history store.
    * It gathers saved annotation histories, marks them as sent, and transforms
    * the data into a structured object format, with points and file SHA256 hash.
    * The resulting object uses filenames as keys.
    *
-   * @param tool - The tool to get the annotation data for.
+   * @param tool - The tool to get the annotation data for. If undefined, all data will be collected.
    * @return An object where each key is a filename associated with its
    * corresponding annotation data, consisting of points and the SHA256 hash.
    */
-  public collectAnnotations(tool: AnnotationTool): AnnotationData {
+  public collectAnnotations(tool: AnnotationTool | undefined = undefined): AnnotationData {
     const result: AnnotationData = {};
     this._histories.forEach((h) => {
       if (h.status === SaveStatus.unedited) {
@@ -129,7 +131,9 @@ export class FileAnnotationHistoryContainer<T extends Point2D> {
   /**
    * Called when the user changed something within the model settings.
    * Will check if there is any unsaved history and request the user to confirm
-   * in this case that the changes should be discarded.
+   * in this case that the unsaved changes should be discarded.
+   *
+   * @param tool - The tool, where settings were changed. Used to know which history to reset.
    */
   public async requestDetection(tool: AnnotationTool) {
     const withUpdates = this._histories.filter((h) => h.status === SaveStatus.edited);
@@ -140,6 +144,11 @@ export class FileAnnotationHistoryContainer<T extends Point2D> {
     this.toolForOverwriteModal = tool;
   }
 
+  /**
+   * Runs the detection for the selected history for all selected tools.
+   * @param selectedHistory
+   * @private
+   */
   private async runDetection(selectedHistory: FileAnnotationHistory<T>) {
     await Promise.all(
       Array.from(this.tools.getUsedTools() || []).map(async (tool) => {
@@ -160,6 +169,10 @@ export class FileAnnotationHistoryContainer<T extends Point2D> {
       selectedHistory.clearForTool(tool);
       selectedHistory.merge(graphs as Graph<T>[], tool);
     } catch (error) {
+      /* The catch is triggered when
+       * - detection fails (nothing is detected) [This is not an error]
+       * - for whatever reason the history cant be merged
+       */
       console.error(error);
       selectedHistory.clearForTool(tool);
     }
