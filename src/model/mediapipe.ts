@@ -25,18 +25,7 @@ export class MediapipeModel implements ModelApi<Point3D> {
       'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
     )
       .then((filesetResolver) =>
-        FaceLandmarker.createFromOptions(filesetResolver, {
-          baseOptions: {
-            modelAssetPath:
-              'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
-            // When adding user model of same type -> modelAssetBuffer
-            delegate: 'CPU'
-          },
-          minFaceDetectionConfidence: 0.3,
-          minFacePresenceConfidence: 0.3,
-          runningMode: 'IMAGE',
-          numFaces: 1
-        })
+        FaceLandmarker.createFromOptions(filesetResolver, this.config.modelOptions)
       )
       .then((landmarker) => {
         this.meshLandmarker = landmarker;
@@ -56,13 +45,15 @@ export class MediapipeModel implements ModelApi<Point3D> {
         const result = this.meshLandmarker?.detect(image);
         if (!result) {
           this.config.processing = false;
-          reject(new Error('Face(s) could not be detected!'));
+          reject(
+            new Error(`Face(s) could not be detected for image ${imageFile.filePointer.name}!`)
+          );
           return;
         }
         const graph = MediapipeModel.processResult(result);
         if (!graph) {
           this.config.processing = false;
-          reject(new Error('Face(s) could not be detected!'));
+          reject(new Error(`Face(s) could not be for image ${imageFile.filePointer.name}!`));
           return;
         }
         this.config.processing = false;
@@ -96,6 +87,11 @@ export class MediapipeModel implements ModelApi<Point3D> {
       return graphs[0];
     }
     return null;
+  }
+
+  updateSettings(): Promise<void> {
+    if (!this.meshLandmarker) return Promise.resolve();
+    return this.initialize();
   }
 
   async uploadAnnotations(_: AnnotationData): Promise<void | Response> {

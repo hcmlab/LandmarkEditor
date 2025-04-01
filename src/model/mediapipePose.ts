@@ -15,6 +15,18 @@ import { usePoseConfig } from '@/stores/ToolSpecific/poseConfig.ts';
 
 // Docs on the model: https://ai.google.dev/edge/mediapipe/solutions/vision/pose_landmarker
 
+export enum PoseModelType {
+  LITE = 'Lite',
+  FULL = 'Full',
+  HEAVY = 'Heavy'
+}
+
+export const poseModelTypes: PoseModelType[] = [
+  PoseModelType.LITE,
+  PoseModelType.FULL,
+  PoseModelType.HEAVY
+];
+
 export class MediapipePoseModel implements ModelApi<Point2D> {
   private poseLandmarker: PoseLandmarker | null = null;
   private readonly config = usePoseConfig();
@@ -24,19 +36,7 @@ export class MediapipePoseModel implements ModelApi<Point2D> {
       'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
     )
       .then((filesetResolver) =>
-        PoseLandmarker.createFromOptions(filesetResolver, {
-          baseOptions: {
-            modelAssetPath:
-              'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/latest/pose_landmarker_full.task',
-            delegate: undefined
-          },
-          minPoseDetectionConfidence: 0.5,
-          minPosePresenceConfidence: 0.5,
-          minTrackingConfidence: 0.5,
-          outputSegmentationMasks: false,
-          runningMode: 'IMAGE',
-          numPoses: 1
-        })
+        PoseLandmarker.createFromOptions(filesetResolver, this.config.getModelConfig())
       )
       .then((landmarker) => {
         this.poseLandmarker = landmarker;
@@ -56,14 +56,14 @@ export class MediapipePoseModel implements ModelApi<Point2D> {
         const res = this.poseLandmarker?.detect(img);
         if (!res) {
           this.config.processing = false;
-          reject(new Error('Pose could not be detected!'));
+          reject(new Error(`Pose could not be detected for image ${imageFile.filePointer.name}!`));
           return;
         }
 
         const graph = await MediapipePoseModel.processResult(res);
         if (!graph) {
           this.config.processing = false;
-          reject(new Error('Pose could not be detected!'));
+          reject(new Error(`Pose could not be detected for image ${imageFile.filePointer.name}!`));
           return;
         }
         this.config.processing = false;
@@ -91,6 +91,10 @@ export class MediapipePoseModel implements ModelApi<Point2D> {
       return graphs[0];
     }
     return null;
+  }
+
+  async updateSettings(): Promise<void> {
+    return this.initialize();
   }
 
   type(): ModelType {

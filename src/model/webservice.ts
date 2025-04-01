@@ -111,6 +111,10 @@ export class WebServiceModel implements ModelApi<Point3D> {
       });
   }
 
+  updateSettings() {
+    return Promise.resolve();
+  }
+
   type(): ModelType {
     return ModelType.custom;
   }

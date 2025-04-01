@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, defineProps, watch } from 'vue';
+import { ref, watch } from 'vue';
 
 const props = defineProps<{ running: boolean }>();
 const isRunning = ref(props.running);
@@ -8,7 +8,6 @@ watch(
   () => props.running,
   (newVal) => {
     isRunning.value = newVal;
-    console.log(newVal);
   },
   {
     deep: true,

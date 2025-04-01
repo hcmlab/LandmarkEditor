@@ -15,7 +15,7 @@ test('Store sets showTesselation correctly', () => {
 test('Check the elements in the state', () => {
   const store = useFaceMeshConfig();
 
-  const expectedKeys = ['showTesselation', 'processing'];
+  const expectedKeys = ['showTesselation', 'processing', 'modelOptions'];
   const actualKeys = Object.keys(store.$state);
 
   expect(actualKeys.length).toBe(expectedKeys.length);

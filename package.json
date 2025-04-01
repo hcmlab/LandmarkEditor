@@ -37,7 +37,7 @@
     "last 2 versions, not dead"
   ],
   "dependencies": {
-    "@mediapipe/tasks-vision": "^0.10.14",
+    "@mediapipe/tasks-vision": "^0.10.21",
     "@thumbmarkjs/thumbmarkjs": "^0.16.0",
     "bootstrap": "^5.3.3",
     "bootstrap-vue-next": "^0.24.10",

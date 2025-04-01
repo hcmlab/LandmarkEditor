@@ -1,6 +1,5 @@
 import { Editor } from '@/Editors/Editor';
 import { AnnotationTool } from '@/enums/annotationTool';
-import { type Point2D } from '@/graph/point2d';
 import { usePoseConfig } from '@/stores/ToolSpecific/poseConfig';
 import { PointMoveEditor } from '@/Editors/PointMoveEditor';
 import { BodyFeature } from '@/enums/bodyFeature';
@@ -24,18 +23,13 @@ export class PoseEditor extends PointMoveEditor {
   }
 
   draw(): void {
-    if (this.graph.points.length === 0) {
-      throw new Error('No points to draw');
-    }
-    const hiddenPoints = this.getOverwrittenPoints();
-    this.graph.points.forEach((point: Point2D) => {
-      if (hiddenPoints.includes(point.id)) return;
-      this.drawPoint(point);
-    });
+    if (this.graph.points.length === 0) return;
 
     this.drawFaceTrait(LEFT_SIDE, COLOR_EDGES_LEFT_EYE);
     this.drawFaceTrait(RIGHT_SIDE, COLOR_EDGES_RIGHT_EYE);
     this.drawFaceTrait(BOTH_SIDES, COLOR_EDGES_POSE);
+
+    this.handleHandConnection();
   }
 
   protected pointIdsFromFeature(feature: BodyFeature): number[] {
@@ -58,14 +52,47 @@ export class PoseEditor extends PointMoveEditor {
         return [];
     }
   }
+
+  private handleHandConnection() {
+    // check if hand is used
+    if (!this.tools.tools.has(AnnotationTool.Hand)) return;
+
+    // get connection points
+    const left_pose_wrist = this.graph.getById(15);
+    if (!left_pose_wrist) return;
+    const right_pose_wrist = this.graph.getById(16);
+    if (!right_pose_wrist) return;
+
+    const left_elbow = this.graph.getById(13);
+    if (!left_elbow) return;
+    const right_elbow = this.graph.getById(14);
+    if (!right_elbow) return;
+
+    const left_hand_wrist = this.tools.histories.selectedHistory
+      ?.get(AnnotationTool.Hand)
+      ?.getById(0);
+    if (!left_hand_wrist) return;
+    const right_hand_wrist = this.tools.histories.selectedHistory
+      ?.get(AnnotationTool.Hand)
+      ?.getById(21);
+    if (!right_hand_wrist) return;
+
+    // draw connection
+    this.drawEdges(COLOR_EDGES_LEFT_EYE, [{ start: left_elbow, end: left_hand_wrist }]);
+    this.drawEdges(COLOR_EDGES_RIGHT_EYE, [{ start: right_elbow, end: right_hand_wrist }]);
+
+    // update internal point
+    left_pose_wrist.moveTo(left_hand_wrist);
+    right_pose_wrist.moveTo(right_hand_wrist);
+  }
 }
 
 export const POSE_FEATURE_LEFT_EYE = [1, 2, 3, 7];
 export const POSE_FEATURE_RIGHT_EYE = [4, 5, 6, 8];
 export const POSE_FEATURE_NOSE = [0];
 export const POSE_FEATURE_MOUTH = [9, 10];
-export const POSE_FEATURE_LEFT_HAND = [17, 19, 21];
-export const POSE_FEATURE_RIGHT_HAND = [18, 20, 22];
+export const POSE_FEATURE_LEFT_HAND = [15, 17, 19, 21];
+export const POSE_FEATURE_RIGHT_HAND = [16, 18, 20, 22];
 
 const LEFT_SIDE: Connection[] = [
   // Face connections

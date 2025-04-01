@@ -28,6 +28,8 @@ export interface ModelApi<P extends Point2D> {
    */
   uploadAnnotations(annotations: AnnotationData): Promise<void | Response>;
 
+  updateSettings(): Promise<void>;
+
   type(): ModelType;
 
   tool(): AnnotationTool;

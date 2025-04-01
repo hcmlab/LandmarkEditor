@@ -96,6 +96,8 @@ export abstract class PointMoveEditor extends Editor {
   protected set graph(value: Graph<Point2D> | null | undefined) {
     if (value) {
       this._graph = value.clone();
+    } else {
+      this._graph = new Graph<Point2D>([]);
     }
   }
 
@@ -210,11 +212,13 @@ export abstract class PointMoveEditor extends Editor {
   private loadLatestAnnotation() {
     const selectedHistory = this.tools.getSelectedHistory();
     if (!selectedHistory) return; // there is no error here. Just nothing to render.
-    console.log(selectedHistory);
-    this.graph = selectedHistory.get(this.childTool);
-    if (this.graph.points.length === 0) {
-      return;
-    }
+    this.graph = null;
+    this.graph = selectedHistory.get(this.childTool)?.clone();
+
+    // If you check the git history for this line you see that there was a check, if the amount of points was 0.
+    // This was wrong, since the empty graph means no features were detected.
+    if (!this.graph) return;
+
     Editor.draw();
   }
 
@@ -242,6 +246,9 @@ export abstract class PointMoveEditor extends Editor {
         0,
         Math.PI * 2
       );
+      // Draws the ID of the point next to it. Useful for debugging
+      // Editor.ctx.font = 20 / Editor.zoomScale + 'px serif';
+      // Editor.ctx.fillText(String(point.id), projectedPoint.x, projectedPoint.y);
       Editor.ctx.fill();
     }
   }
@@ -251,11 +258,12 @@ export abstract class PointMoveEditor extends Editor {
     color: string | CanvasGradient | CanvasPattern
   ): void {
     if (!this.graph) return;
+    const overwrittenPoints = this.getOverwrittenPoints();
     const pointPairs: PointPairs<Point2D>[] = connections
       .filter(
         (connection) =>
-          !this.getOverwrittenPoints().includes(connection.start) ||
-          !this.getOverwrittenPoints().includes(connection.end)
+          !overwrittenPoints.includes(connection.start) &&
+          !overwrittenPoints.includes(connection.end)
       )
       .map((connection) => {
         return {
@@ -267,6 +275,7 @@ export abstract class PointMoveEditor extends Editor {
     this.drawEdges(color, pointPairs);
   }
 
+  /** Draws all edges and points of the given point pairs */
   protected drawEdges(
     color: string | CanvasGradient | CanvasPattern,
     pointPairs: PointPairs<Point2D>[]

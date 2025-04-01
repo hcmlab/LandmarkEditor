@@ -22,18 +22,7 @@ export class MediapipeHandModel implements ModelApi<Point2D> {
       'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
     )
       .then((filesetResolver) =>
-        HandLandmarker.createFromOptions(filesetResolver, {
-          baseOptions: {
-            modelAssetPath:
-              'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/latest/hand_landmarker.task',
-            delegate: undefined
-          },
-          runningMode: 'IMAGE',
-          minTrackingConfidence: 0.5,
-          numHands: 2,
-          minHandDetectionConfidence: 0.5,
-          minHandPresenceConfidence: 0.5
-        })
+        HandLandmarker.createFromOptions(filesetResolver, this.config.modelOptions)
       )
       .then((landmarker) => {
         this.handLandmarker = landmarker;
@@ -53,14 +42,18 @@ export class MediapipeHandModel implements ModelApi<Point2D> {
         const res = this.handLandmarker?.detect(img);
         if (!res) {
           this.config.processing = false;
-          reject(new Error('Pose could not be detected!'));
+          reject(
+            new Error(`Hand(s) could not be detected for image  ${imageFile.filePointer.name}!`)
+          );
           return;
         }
 
         const graph = await MediapipeHandModel.processResult(res);
         if (!graph) {
           this.config.processing = false;
-          reject(new Error('Pose could not be detected!'));
+          reject(
+            new Error(`Hand(s) could not be detected for image  ${imageFile.filePointer.name}!`)
+          );
           return;
         }
         this.config.processing = false;
@@ -83,6 +76,11 @@ export class MediapipeHandModel implements ModelApi<Point2D> {
       return graph;
     }
     return null;
+  }
+
+  updateSettings() {
+    if (!this.handLandmarker) return Promise.resolve();
+    return this.initialize();
   }
 
   tool(): AnnotationTool {

@@ -242,6 +242,7 @@ export class FileAnnotationHistory<T extends Point2D> {
   public clearForTool(tool: AnnotationTool) {
     this._history.set(tool, []);
     this._currentHistoryIndex.set(tool, 0);
+    this._status = SaveStatus.unedited;
   }
 
   /**

@@ -6,9 +6,15 @@ import { AnnotationTool } from '@/enums/annotationTool.ts';
 import NotDetectedWarning from '@/components/Sidebar/ToolMenu/Common/NotDetectedWarning.vue';
 import ProcessingSpinner from '@/components/Sidebar/ToolMenu/Common/ProcessingSpinner.vue';
 import { useFaceMeshConfig } from '@/stores/ToolSpecific/faceMeshConfig.ts';
-const config = useFaceMeshConfig();
+import ThresholdDragBar from '@/components/Sidebar/ToolMenu/Common/ThreshouldDragBar.vue';
+import { useAnnotationToolStore } from '@/stores/annotationToolStore.ts';
 
+const config = useFaceMeshConfig();
+const tools = useAnnotationToolStore();
 const processing = ref(false);
+
+const minDetectionConfidence = ref((config.modelOptions.minFaceDetectionConfidence || 0) * 100);
+const minPresenceConfidence = ref((config.modelOptions.minFacePresenceConfidence || 0) * 100);
 
 watch(
   () => config.processing,
@@ -20,6 +26,27 @@ watch(
     immediate: true
   }
 );
+
+const updateDetectionConfidence = (newVal: number) => {
+  if (!tools.tools.has(AnnotationTool.FaceMesh)) return;
+  config.modelOptions.minFaceDetectionConfidence = newVal / 100;
+
+  runUpdate();
+};
+
+const updatePresenceConfidence = (newVal: number) => {
+  if (!tools.tools.has(AnnotationTool.FaceMesh)) return;
+  config.modelOptions.minFacePresenceConfidence = newVal / 100;
+
+  runUpdate();
+};
+
+function runUpdate() {
+  tools
+    .getModel(AnnotationTool.FaceMesh)
+    ?.updateSettings()
+    .then((_) => tools.histories.requestDetection(AnnotationTool.FaceMesh));
+}
 </script>
 
 <template>
@@ -27,6 +54,16 @@ watch(
   <NotDetectedWarning :tool="AnnotationTool.FaceMesh" text="No face detected" v-if="!processing" />
   <ViewOptions />
   <ModelSelector />
+  <ThresholdDragBar
+    top-text="Minimum Detection Confidence"
+    icon="bi-speedometer2"
+    v-model="minDetectionConfidence"
+    @change="updateDetectionConfidence(minDetectionConfidence)"
+  />
+  <ThresholdDragBar
+    top-text="Minimum Presence Confidence"
+    icon="bi-speedometer2"
+    v-model="minPresenceConfidence"
+    @change="updatePresenceConfidence(minPresenceConfidence)"
+  />
 </template>
-
-<style scoped></style>

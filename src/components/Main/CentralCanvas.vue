@@ -7,6 +7,7 @@ import { FaceMeshEditor } from '@/Editors/FaceMeshEditor';
 import { BackgroundDrawer } from '@/Editors/BackgroundDrawer';
 import { PoseEditor } from '@/Editors/PoseEditor';
 import { HandEditor } from '@/Editors/HandEditor';
+import UserOverwriteModal from '@/components/Main/UserOverwriteModal.vue';
 
 const tools = useAnnotationToolStore();
 
@@ -43,7 +44,7 @@ watch(
     await Promise.all(
       Array.from(added).map(async (tool) => {
         editors.value.push(fromTool(tool));
-        await tools.histories.resetSelectedHistoryForTool(tool);
+        await tools.histories.resetHistoryForTool(tool);
       })
     );
     editors.value.forEach((editor) => {
@@ -150,6 +151,7 @@ const onResize = () => {
 
 <template>
   <div class="w-70 border" id="canvas-div">
+    <UserOverwriteModal class="top-0 start-0 w-100 h-100" />
     <canvas
       id="canvas"
       ref="canvas"

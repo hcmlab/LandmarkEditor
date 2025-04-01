@@ -40,6 +40,7 @@ export class FaceMeshEditor extends PointMoveEditor {
   }
 
   draw(): void {
+    if (this.graph.points.length === 0) return;
     // Draw Mesh
     if (this.editorConfigStore?.showTesselation) {
       this.drawFaceTrait(FaceLandmarker.FACE_LANDMARKS_TESSELATION, COLOR_EDGES_TESSELATION);

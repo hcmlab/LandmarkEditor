@@ -11,6 +11,7 @@ export class FileAnnotationHistoryContainer<T extends Point2D> {
   private readonly _histories: FileAnnotationHistory<T>[] = [];
   private _selectedHistoryIndex: number = 0;
   private readonly tools = useAnnotationToolStore();
+  public toolForOverwriteModal: AnnotationTool | null = null;
 
   public histories(tool: AnnotationTool): (Graph<T> | null)[] {
     return this._histories.map((h) => h.get(tool));
@@ -21,7 +22,7 @@ export class FileAnnotationHistoryContainer<T extends Point2D> {
   }
 
   public get selectedHistory(): FileAnnotationHistory<T> | undefined {
-    return this._histories[this._selectedHistoryIndex] as FileAnnotationHistory<T>;
+    return this._histories[this._selectedHistoryIndex];
   }
 
   public set selectedHistory(h: FileAnnotationHistory<T>) {
@@ -117,12 +118,26 @@ export class FileAnnotationHistoryContainer<T extends Point2D> {
     await this.runDetection(selectedHistory);
   }
 
-  public async resetSelectedHistoryForTool(tool: AnnotationTool) {
-    const h = this.selectedHistory;
-    if (!h) return;
+  public async resetHistoryForTool(tool: AnnotationTool) {
+    // eslint-disable-next-line no-loops/no-loops
+    for (const h of this._histories) {
+      h.clearForTool(tool);
+      await this.runDetectionForTool(h, tool);
+    }
+  }
 
-    h.clearForTool(tool);
-    await this.runDetectionForTool(h, tool);
+  /**
+   * Called when the user changed something within the model settings.
+   * Will check if there is any unsaved history and request the user to confirm
+   * in this case that the changes should be discarded.
+   */
+  public async requestDetection(tool: AnnotationTool) {
+    const withUpdates = this._histories.filter((h) => h.status === SaveStatus.edited);
+    if (withUpdates.length === 0) {
+      this._histories.forEach((h) => this.runDetection(h));
+      return;
+    }
+    this.toolForOverwriteModal = tool;
   }
 
   private async runDetection(selectedHistory: FileAnnotationHistory<T>) {
@@ -140,13 +155,13 @@ export class FileAnnotationHistoryContainer<T extends Point2D> {
     const model = this.tools.getModel(tool);
     if (!model) return;
 
-    console.log(`Starting detection ${tool}`);
-    const graphs = await model.detect(selectedHistory.file);
-    if (graphs === null) {
-      return;
+    try {
+      const graphs = await model.detect(selectedHistory.file);
+      selectedHistory.clearForTool(tool);
+      selectedHistory.merge(graphs as Graph<T>[], tool);
+    } catch (error) {
+      console.error(error);
+      selectedHistory.clearForTool(tool);
     }
-    console.log(`Detected detection ${tool}`);
-    selectedHistory.clearForTool(tool);
-    selectedHistory.merge(graphs as Graph<T>[], tool);
   }
 }

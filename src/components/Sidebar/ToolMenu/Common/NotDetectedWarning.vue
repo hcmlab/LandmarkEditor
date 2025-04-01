@@ -20,10 +20,8 @@ const isDetected = computed(() => {
 </script>
 
 <template>
-  <div v-if="!isDetected" class="text-danger font-weight-bold">
+  <div v-if="!isDetected" class="text-danger fw-bold">
     <i class="bi bi-exclamation-triangle" />
     {{ props.text }}
   </div>
 </template>
-
-<style scoped></style>
