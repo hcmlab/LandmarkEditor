@@ -27,6 +27,22 @@ watch(
   }
 );
 
+watch(
+  () => config.modelOptions,
+  (newVal) => {
+    if (newVal.minFaceDetectionConfidence) {
+      minDetectionConfidence.value = newVal.minFaceDetectionConfidence * 100;
+    }
+    if (newVal.minFacePresenceConfidence) {
+      minPresenceConfidence.value = newVal.minFacePresenceConfidence * 100;
+    }
+  },
+  {
+    deep: true,
+    immediate: true
+  }
+);
+
 const updateDetectionConfidence = (newVal: number) => {
   if (!tools.tools.has(AnnotationTool.FaceMesh)) return;
   config.modelOptions.minFaceDetectionConfidence = newVal / 100;

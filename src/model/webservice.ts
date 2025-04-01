@@ -1,12 +1,12 @@
 import { getFingerprint } from '@thumbmarkjs/thumbmarkjs';
-import type { AnnotationData, ModelApi } from './modelApi';
+import type { ModelApi } from './modelApi';
 import { Point3D } from '@/graph/point3d';
 import { urlError } from '@/enums/urlError';
 import type { ImageFile } from '@/imageFile';
 import { FileAnnotationHistory } from '@/cache/fileAnnotationHistory';
 import type { Graph } from '@/graph/graph';
 import { AnnotationTool } from '@/enums/annotationTool';
-import type { GraphData } from '@/graph/serialisedData.ts';
+import type { AnnotationData, GraphData } from '@/graph/serialisedData.ts';
 
 /**
  * Represents a model using a WebService for face landmark detection.

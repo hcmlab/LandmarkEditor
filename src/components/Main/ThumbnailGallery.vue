@@ -31,7 +31,7 @@ function selectThumbnail(file: ImageFile): void {
       .catch((reason) => {
         throw new Error(`Posting history failed: ${reason}`);
       });
-    oldHistory.markAsSent();
+    oldHistory.markAsSaved();
   }
 
   /* other image selected */

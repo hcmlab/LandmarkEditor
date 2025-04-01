@@ -2,11 +2,7 @@ import { Point2D } from '@/graph/point2d';
 import type { ImageFile } from '@/imageFile';
 import type { Graph } from '@/graph/graph';
 import type { AnnotationTool } from '@/enums/annotationTool';
-import type { GraphData } from '@/graph/serialisedData.ts';
-
-export interface AnnotationData {
-  [key: string]: GraphData | string;
-}
+import type { AnnotationData } from '@/graph/serialisedData.ts';
 
 /**
  * Represents an interface for a model API that performs face landmark detection.

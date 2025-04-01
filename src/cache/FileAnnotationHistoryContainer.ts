@@ -1,11 +1,12 @@
 import type { Point2D } from '@/graph/point2d';
 import { FileAnnotationHistory } from '@/cache/fileAnnotationHistory';
-import type { AnnotationData, ModelApi } from '@/model/modelApi';
+import type { AnnotationData } from '@/graph/serialisedData';
 import { ImageFile } from '@/imageFile';
 import { Graph } from '@/graph/graph';
 import { SaveStatus } from '@/enums/saveStatus';
 import { AnnotationTool } from '@/enums/annotationTool';
 import { useAnnotationToolStore } from '@/stores/annotationToolStore';
+import type { ModelApi } from '@/model/modelApi.ts';
 
 export class FileAnnotationHistoryContainer<T extends Point2D> {
   private readonly _histories: FileAnnotationHistory<T>[] = [];

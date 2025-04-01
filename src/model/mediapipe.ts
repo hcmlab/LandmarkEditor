@@ -3,7 +3,7 @@ import {
   type FaceLandmarkerResult,
   FilesetResolver
 } from '@mediapipe/tasks-vision';
-import type { AnnotationData, ModelApi } from './modelApi';
+import type { ModelApi } from './modelApi';
 import { findNeighbourPointIds } from '@/graph/face_landmarks_features';
 import { Graph } from '@/graph/graph';
 import { Point3D } from '@/graph/point3d';
@@ -11,6 +11,7 @@ import { type ImageFile } from '@/imageFile';
 import { AnnotationTool } from '@/enums/annotationTool';
 import { imageFromFile } from '@/util/imageFromFile';
 import { useFaceMeshConfig } from '@/stores/ToolSpecific/faceMeshConfig.ts';
+import type { AnnotationData } from '@/graph/serialisedData.ts';
 /**
  * Represents a model using MediaPipe for face landmark detection.
  * Implements the ModelApi interface for working with Point3D graphs.

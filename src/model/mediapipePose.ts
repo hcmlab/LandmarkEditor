@@ -3,7 +3,7 @@ import {
   PoseLandmarker,
   type PoseLandmarkerResult
 } from '@mediapipe/tasks-vision';
-import type { AnnotationData, ModelApi } from '@/model/modelApi';
+import type { ModelApi } from '@/model/modelApi';
 import { Point2D } from '@/graph/point2d';
 import type { ImageFile } from '@/imageFile';
 import { imageFromFile } from '@/util/imageFromFile';
@@ -11,6 +11,7 @@ import { Graph } from '@/graph/graph';
 import { findNeighbourPointIds } from '@/graph/face_landmarks_features';
 import { AnnotationTool } from '@/enums/annotationTool';
 import { usePoseConfig } from '@/stores/ToolSpecific/poseConfig.ts';
+import type { AnnotationData } from '@/graph/serialisedData.ts';
 
 // Docs on the model: https://ai.google.dev/edge/mediapipe/solutions/vision/pose_landmarker
 

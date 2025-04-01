@@ -140,6 +140,11 @@ export class FileAnnotationHistory<T extends Point2D> {
     this._status = SaveStatus.unedited;
   }
 
+  /** Marks the save status as saved, if the user wishes to include the file into the saving action. */
+  markAsSaved(): void {
+    this._status = SaveStatus.saved;
+  }
+
   /** Resets the save status if item is sent */
   markAsSent(): void {
     this._status = SaveStatus.unedited;

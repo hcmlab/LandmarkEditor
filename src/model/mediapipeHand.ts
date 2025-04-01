@@ -3,7 +3,7 @@ import {
   HandLandmarker,
   type HandLandmarkerResult
 } from '@mediapipe/tasks-vision';
-import type { AnnotationData, ModelApi } from '@/model/modelApi';
+import type { ModelApi } from '@/model/modelApi';
 import { Point2D } from '@/graph/point2d';
 import type { ImageFile } from '@/imageFile';
 import { Graph } from '@/graph/graph';
@@ -11,6 +11,7 @@ import { AnnotationTool } from '@/enums/annotationTool';
 import { imageFromFile } from '@/util/imageFromFile';
 import { findNeighbourPointIds } from '@/graph/face_landmarks_features';
 import { useHandConfig } from '@/stores/ToolSpecific/handConfig.ts';
+import type { AnnotationData } from '@/graph/serialisedData.ts';
 
 export class MediapipeHandModel implements ModelApi<Point2D> {
   private handLandmarker: HandLandmarker | undefined = undefined;

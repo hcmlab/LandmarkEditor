@@ -44,7 +44,6 @@ watch(
     await Promise.all(
       Array.from(added).map(async (tool) => {
         editors.value.push(fromTool(tool));
-        await tools.histories.resetHistoryForTool(tool);
       })
     );
     editors.value.forEach((editor) => {

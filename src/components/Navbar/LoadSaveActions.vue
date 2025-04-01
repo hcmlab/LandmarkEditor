@@ -5,12 +5,18 @@ import { Point2D } from '@/graph/point2d';
 import ButtonWithIcon from '@/components/MenuItems/ButtonWithIcon.vue';
 import getFormattedTimestamp from '@/util/formattedTimestamp';
 import { FileAnnotationHistory } from '@/cache/fileAnnotationHistory';
-import type { AnnotationData } from '@/model/modelApi';
 import { useAnnotationToolStore } from '@/stores/annotationToolStore';
 import { AnnotationTool } from '@/enums/annotationTool';
 import { SaveStatus } from '@/enums/saveStatus';
+import { type AnnotationData, type ToolConfig, isToolConfig } from '@/graph/serialisedData.ts';
+import { useFaceMeshConfig } from '@/stores/ToolSpecific/faceMeshConfig.ts';
+import { useHandConfig } from '@/stores/ToolSpecific/handConfig.ts';
+import { usePoseConfig } from '@/stores/ToolSpecific/poseConfig.ts';
 
 const tools = useAnnotationToolStore();
+const faceConfig = useFaceMeshConfig();
+const handConfig = useHandConfig();
+const poseConfig = usePoseConfig();
 
 const imageInput = ref();
 const annotationInput = ref();
@@ -32,7 +38,7 @@ function saveAnnotation(download: boolean): void {
     return;
   }
 
-  const result = h.collectAnnotations();
+  const result: AnnotationData = h.collectAnnotations();
   if (Object.keys(result).length <= 0) {
     return;
   }
@@ -46,6 +52,7 @@ function saveAnnotation(download: boolean): void {
 
   if (!download) return;
 
+  result.config = getToolConfigData();
   const dataStr: string =
     'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(result));
   const a: HTMLAnchorElement = document.createElement('a');
@@ -59,8 +66,11 @@ function onFileLoad(reader: FileReader): void {
   const parsedData: AnnotationData = JSON.parse(reader.result as string);
   Object.keys(parsedData).forEach((filename) => {
     const rawData = parsedData[filename];
+    if (!rawData) {
+      throw new Error(`Failed to retrieve annotation data for ${filename}`);
+    }
     // cancel for additional keys that don't describe graphs
-    if (typeof rawData === 'string') {
+    if (typeof rawData === 'string' || isToolConfig(rawData)) {
       return;
     }
     const sha = rawData.sha256;
@@ -86,8 +96,49 @@ function onFileLoad(reader: FileReader): void {
       throw new Error(`Failed to parse histories for ${filename}`);
     }
     history.clear();
+
+    // Add tools that are in the annotation data but not used already
+    // eslint-disable-next-line no-loops/no-loops
+    for (const key of h.keys()) {
+      if (!tools.getUsedTools().has(key)) {
+        tools.tools.add(key);
+      }
+    }
     history.mergeMultipleTools(h);
   });
+  parseToolConfigData(parsedData);
+}
+
+function getToolConfigData() {
+  return {
+    faceMinDetectionConf: faceConfig.modelOptions.minFaceDetectionConfidence,
+    faceMinPresenceConf: faceConfig.modelOptions.minFacePresenceConfidence,
+    handMinDetectionConf: handConfig.modelOptions.minHandDetectionConfidence,
+    handMinPresenceConf: handConfig.modelOptions.minHandPresenceConfidence,
+    poseMinDetectionConf: poseConfig.modelConfig.minPoseDetectionConfidence,
+    poseMinPresenceConf: poseConfig.modelConfig.minPosePresenceConfidence,
+    poseModelType: poseConfig.modelType
+  } as ToolConfig;
+}
+
+function parseToolConfigData(parsedData: AnnotationData): void {
+  const toolConfig = parsedData.config as ToolConfig;
+  if (!toolConfig) {
+    return; // No tool config data to parse
+  }
+
+  if (!isToolConfig(toolConfig)) {
+    throw new Error('Invalid tool config data format');
+  }
+  faceConfig.modelOptions.minFaceDetectionConfidence = toolConfig.faceMinDetectionConf;
+  faceConfig.modelOptions.minFacePresenceConfidence = toolConfig.faceMinPresenceConf;
+
+  handConfig.modelOptions.minHandDetectionConfidence = toolConfig.handMinDetectionConf;
+  handConfig.modelOptions.minHandPresenceConfidence = toolConfig.handMinPresenceConf;
+
+  poseConfig.modelConfig.minPoseDetectionConfidence = toolConfig.poseMinDetectionConf;
+  poseConfig.modelConfig.minPosePresenceConfidence = toolConfig.poseMinPresenceConf;
+  poseConfig.modelType = toolConfig.poseModelType;
 }
 
 function handleLeave(event: BeforeUnloadEvent) {
