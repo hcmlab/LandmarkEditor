@@ -11,14 +11,8 @@ import { Graph } from '@/graph/graph';
 import { FileAnnotationHistory } from '@/cache/fileAnnotationHistory';
 import type { BodyFeature } from '@/enums/bodyFeature';
 
-export const useAnnotationToolStore = defineStore({
-  id: 'annotationTool',
-
-  state: (): {
-    tools: Set<AnnotationTool>;
-    models: Map<AnnotationTool, ModelApi<Point2D>>;
-    histories: FileAnnotationHistoryContainer<Point2D>;
-  } => ({
+export const useAnnotationToolStore = defineStore('annotationTool', {
+  state: () => ({
     tools: new Set([AnnotationTool.FaceMesh]),
     models: new Map<AnnotationTool, ModelApi<Point2D>>([
       [AnnotationTool.FaceMesh, new MediapipeModel()],
@@ -27,35 +21,37 @@ export const useAnnotationToolStore = defineStore({
     ]),
     histories: new FileAnnotationHistoryContainer()
   }),
-  actions: {
-    getUsedTools(): Set<AnnotationTool> {
-      return this.tools;
+  getters: {
+    getTools(state): Set<AnnotationTool> {
+      return state.tools;
     },
-    getUsedModels(): Array<ModelApi<Point2D>> {
-      return Array.from(this.tools)
-        .map((tool) => this.models.get(tool))
+    getModels(state): Array<ModelApi<Point2D>> {
+      return Array.from(state.tools)
+        .map((tool) => state.models.get(tool))
         .filter((model): model is ModelApi<Point2D> => model !== undefined);
     },
+    allModels(state): UnwrapRef<ModelApi<Point2D>>[] {
+      return Array.from(state.models.values());
+    },
+    selectedHistory(state) {
+      return state.histories.selectedHistory as FileAnnotationHistory<Point2D>;
+    },
+    allHistories(state): FileAnnotationHistory<Point2D>[] {
+      return state.histories.allHistories as FileAnnotationHistory<Point2D>[];
+    }
+  },
+  actions: {
     getModel(tool: AnnotationTool): ModelApi<Point2D> | undefined {
       return this.models.get(tool);
     },
     getHistories(tool: AnnotationTool): (Graph<Point2D> | null)[] | undefined {
       return this.histories.histories(tool);
     },
-    getAllHistories(): FileAnnotationHistory<Point2D>[] {
-      return this.histories.allHistories as FileAnnotationHistory<Point2D>[];
-    },
-    getAllModels(): UnwrapRef<ModelApi<Point2D>>[] {
-      return Array.from(this.models.values());
-    },
-    getSelectedHistory() {
-      return this.histories.selectedHistory as FileAnnotationHistory<Point2D>;
-    },
     resetCurrentHistory() {
       this.histories.resetSelectedHistory();
     },
     toggleFeature(feature: BodyFeature) {
-      const h = this.getSelectedHistory();
+      const h = this.selectedHistory;
       if (!h) {
         return;
       }

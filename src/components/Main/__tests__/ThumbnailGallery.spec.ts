@@ -1,3 +1,4 @@
+// eslint-disable-next-line import-x/no-nodejs-modules
 import * as fs from 'node:fs';
 import { mount } from '@vue/test-utils';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
@@ -25,7 +26,7 @@ vi.mock('../../../util/imageFromFile', () => ({
 
 let tools = null;
 let image_file: ImageFile;
-let file;
+let file: File;
 
 beforeAll(async () => {
   // Set up the mock for ImageFile.create within beforeAll to avoid hoisting issues
@@ -37,12 +38,12 @@ beforeAll(async () => {
   image_file = await ImageFile.create(file);
   setActivePinia(createPinia());
   tools = useAnnotationToolStore();
-  tools.histories.add(image_file, []);
+  await tools.histories.add(image_file, []);
 });
 
 describe('ThumbnailGallery', () => {
   it('should set selectedHistory to the current history upon selectThumbnail function execution', async () => {
-    expect(tools.getSelectedHistory().isEmpty(AnnotationTool.FaceMesh)).toBeTruthy;
+    expect(tools.selectedHistory.isEmpty(AnnotationTool.FaceMesh)).toBeTruthy();
 
     const wrapper = mount(ThumbnailGallery);
 
@@ -52,6 +53,6 @@ describe('ThumbnailGallery', () => {
     expect(thumbnailContainer.exists()).toBe(true);
 
     await thumbnailContainer.trigger('click', image_file);
-    expect(tools.getSelectedHistory().file).toEqual(image_file);
+    expect(tools.selectedHistory.file).toEqual(image_file);
   });
 });

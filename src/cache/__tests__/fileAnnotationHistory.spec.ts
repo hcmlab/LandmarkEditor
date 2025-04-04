@@ -50,12 +50,12 @@ describe('FileAnnotationHistory', () => {
     const graph = generateMockedGraph();
 
     // state before addition
-    expect(history.isEmpty(AnnotationTool.Pose));
+    expect(history.isEmpty(AnnotationTool.Pose)).toBeTruthy();
 
     history.add(graph, AnnotationTool.Pose);
 
     // state after addition
-    expect(!history.isEmpty(AnnotationTool.Pose));
+    expect(history.isEmpty(AnnotationTool.Pose)).toBeFalsy();
     expect(history.get(AnnotationTool.Pose)).toStrictEqual(graph);
   });
 

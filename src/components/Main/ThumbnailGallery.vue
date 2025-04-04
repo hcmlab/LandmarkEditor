@@ -9,10 +9,10 @@ import { useAnnotationToolStore } from '@/stores/annotationToolStore';
 import { AnnotationTool } from '@/enums/annotationTool';
 
 const tools = useAnnotationToolStore();
-const histories = ref(tools.getAllHistories());
+const histories = ref(tools.allHistories);
 
 function selectThumbnail(file: ImageFile): void {
-  const oldHistory = tools.getSelectedHistory();
+  const oldHistory = tools.selectedHistory;
 
   /* clicking to save */
   if (
@@ -40,7 +40,7 @@ function selectThumbnail(file: ImageFile): void {
 </script>
 
 <template>
-  <div class="w-10 h-100 rounded-start-1 shadow bg-light text-center" id="thumbnail-gallery">
+  <div id="thumbnail-gallery" class="w-10 h-100 rounded-start-1 shadow bg-light text-center">
     <div class="h-5 d-flex align-items-center justify-content-center">
       <h6>
         Images
@@ -55,9 +55,9 @@ function selectThumbnail(file: ImageFile): void {
     <div id="thumbnailGalleryContainer" class="overflow-auto mh-95 w-100">
       <div v-for="(history, idx) in histories" :key="idx" class="pb-1">
         <ThumbnailContainer
-          @click="selectThumbnail"
-          :history="history as FileAnnotationHistory<Point2D>"
           :id="'thumbnail-' + idx"
+          :history="history as FileAnnotationHistory<Point2D>"
+          @click="selectThumbnail"
         />
       </div>
     </div>

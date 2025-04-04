@@ -34,12 +34,12 @@ watch(
     <div class="d-flex align-items-center justify-content-around">
       <div class="me-2">{{ Math.round(sliderValue * 100) / 100 }}%</div>
       <input
+        :id="barId"
+        v-model.number="sliderValue"
         type="range"
         class="form-range"
         min="0"
         max="100"
-        v-model.number="sliderValue"
-        :id="barId"
       />
     </div>
   </div>

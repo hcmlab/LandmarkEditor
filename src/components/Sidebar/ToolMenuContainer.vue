@@ -35,19 +35,19 @@ function componentFromTool(tool: AnnotationTool) {
     <BAccordion free class="bg-light rounded-1">
       <CommonToolOptions />
       <div v-for="element in tools" :key="element.id">
-        <div class="draggable mt-2" :key="element.id">
+        <div :key="element.id" class="draggable mt-2">
           <BAccordionItem :title="element.tool" visible>
             <component
-              v-if="componentFromTool(element.tool)"
               :is="componentFromTool(element.tool)"
+              v-if="componentFromTool(element.tool)"
             />
             <div v-else>Component not found.</div>
             <!-- remove -->
             <hr />
             <BButton
-              @click="annotationTools.tools.delete(element.tool)"
               variant="outline-dark"
               class="w-100"
+              @click="annotationTools.tools.delete(element.tool)"
             >
               <i class="bi bi-trash"></i>
               Remove tool

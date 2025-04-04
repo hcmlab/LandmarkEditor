@@ -51,7 +51,7 @@ function setModel(model: ModelType): boolean {
           const notificationText = $('#saveNotificationText');
           notificationText.text('Webservice url saved!');
 
-          const histories = tools.getAllHistories();
+          const histories = tools.allHistories;
           if (!histories) {
             console.log('Failed to retrieve history on API change.');
             return;
@@ -118,22 +118,22 @@ function setModel(model: ModelType): boolean {
 
     <fieldset class="btn-group" role="group" style="padding: 0.2vw; width: 100%">
       <input
+        id="btnModelMediapipe"
         type="radio"
         class="btn-check"
         name="btnradio"
-        id="btnModelMediapipe"
         autocomplete="off"
-        @change="setModel(ModelType.mediapipeFaceMesh)"
         checked
+        @change="setModel(ModelType.mediapipeFaceMesh)"
       />
       <label class="btn btn-outline-secondary" for="btnModelMediapipe"
         >Mediapipe<br /><small>Offline</small></label
       >
       <input
+        id="btnModelCustom"
         type="radio"
         class="btn-check"
         name="btnradio"
-        id="btnModelCustom"
         autocomplete="off"
         @change="openModal"
       />
@@ -144,5 +144,5 @@ function setModel(model: ModelType): boolean {
     <div class="mb-2" />
   </div>
 
-  <WebserviceSelectModal @changeModel="(model) => setModel(model)" v-model="showModal" />
+  <WebserviceSelectModal v-model="showModal" @change-model="(model) => setModel(model)" />
 </template>

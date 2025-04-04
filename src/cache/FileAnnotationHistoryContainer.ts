@@ -152,7 +152,7 @@ export class FileAnnotationHistoryContainer<T extends Point2D> {
    */
   private async runDetection(selectedHistory: FileAnnotationHistory<T>) {
     await Promise.all(
-      Array.from(this.tools.getUsedTools() || []).map(async (tool) => {
+      Array.from(this.tools.tools || []).map(async (tool) => {
         await this.runDetectionForTool(selectedHistory, tool);
       })
     );

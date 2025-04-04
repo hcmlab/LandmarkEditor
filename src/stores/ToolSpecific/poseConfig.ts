@@ -2,13 +2,8 @@ import { defineStore } from 'pinia';
 import type { PoseLandmarkerOptions } from '@mediapipe/tasks-vision';
 import { PoseModelType } from '@/model/mediapipePose.ts';
 
-export const usePoseConfig = defineStore({
-  id: 'poseConfig',
-  state: (): {
-    processing: boolean;
-    modelConfig: PoseLandmarkerOptions;
-    modelType: PoseModelType;
-  } => ({
+export const usePoseConfig = defineStore('poseConfig', {
+  state: () => ({
     processing: false,
     modelConfig: {
       baseOptions: {
@@ -21,14 +16,15 @@ export const usePoseConfig = defineStore({
       outputSegmentationMasks: false,
       runningMode: 'IMAGE',
       numPoses: 1
-    },
+    } as PoseLandmarkerOptions,
     modelType: PoseModelType.FULL
   }),
-  actions: {
-    getModelConfig(): PoseLandmarkerOptions {
-      const config = this.modelConfig;
+  getters: {
+    isProcessing: (state) => state.processing,
+    getModelConfig: (state) => {
+      const config = state.modelConfig;
       if (!config.baseOptions) throw new Error('Model config is not properly set');
-      switch (this.modelType) {
+      switch (state.modelType) {
         case PoseModelType.LITE:
           config.baseOptions.modelAssetPath =
             'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/latest/pose_landmarker_lite.task';
@@ -43,6 +39,8 @@ export const usePoseConfig = defineStore({
           break;
       }
       return config;
-    }
-  }
+    },
+    getModelType: (state) => state.modelType
+  },
+  actions: {}
 });

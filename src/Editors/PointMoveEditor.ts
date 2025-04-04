@@ -51,7 +51,7 @@ export abstract class PointMoveEditor extends Editor {
     );
 
     watch(
-      () => this.tools.getSelectedHistory()?.deletedFeatures,
+      () => this.tools.selectedHistory?.deletedFeatures,
       (value) => {
         const changed = allBodyFeatures.filter(
           (val) =>
@@ -70,7 +70,7 @@ export abstract class PointMoveEditor extends Editor {
   }
 
   toggleFeature(feature: BodyFeature) {
-    const selectedHistory = this.tools.getSelectedHistory();
+    const selectedHistory = this.tools.selectedHistory;
     if (!selectedHistory) {
       throw new Error('Failed to get histories on feature deletion.');
     }
@@ -200,7 +200,7 @@ export abstract class PointMoveEditor extends Editor {
   }
 
   onPointsEdited() {
-    const selected_history = this.tools.getSelectedHistory();
+    const selected_history = this.tools.selectedHistory;
     if (!selected_history) {
       throw new Error('Could not retrieve selected history');
     }
@@ -208,7 +208,7 @@ export abstract class PointMoveEditor extends Editor {
   }
 
   private loadLatestAnnotation() {
-    const selectedHistory = this.tools.getSelectedHistory();
+    const selectedHistory = this.tools.selectedHistory;
     if (!selectedHistory) return; // there is no error here. Just nothing to render.
     this.graph = null;
     this.graph = selectedHistory.get(this.childTool)?.clone();
@@ -305,7 +305,7 @@ export abstract class PointMoveEditor extends Editor {
 
   protected getOverwrittenPoints() {
     let res = [] as number[];
-    const h = this.tools.getSelectedHistory();
+    const h = this.tools.selectedHistory;
     if (!h) {
       return [] as number[];
     }

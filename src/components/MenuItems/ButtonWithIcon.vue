@@ -24,11 +24,11 @@ function handleClick(e: MouseEvent) {
 <template>
   <BButton
     :id="'button-' + text.toLowerCase().replace(/ /g, '-')"
+    v-shortkey="shortcut.replace('Control', 'ctrl').toLowerCase().split('+')"
     class="nav-link btn btn-light text-start"
     href="#"
     :aria-keyshortcuts="shortcut"
     @click="handleClick"
-    v-shortkey="shortcut.replace('Control', 'ctrl').toLowerCase().split('+')"
     @shortkey="handleClick"
     ><i :class="'bi ' + icon" class="me-1"></i>{{ text }}
   </BButton>

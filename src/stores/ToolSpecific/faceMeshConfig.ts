@@ -1,9 +1,7 @@
 import { defineStore } from 'pinia';
 import type { FaceLandmarkerOptions } from '@mediapipe/tasks-vision';
 
-export const useFaceMeshConfig = defineStore({
-  id: 'faceMeshConfig',
-
+export const useFaceMeshConfig = defineStore('faceMeshConfig', {
   state: (): {
     showTesselation: boolean;
     processing: boolean;

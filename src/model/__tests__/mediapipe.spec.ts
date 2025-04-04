@@ -24,35 +24,8 @@ describe('MediapipeModel', () => {
   });
 
   it('should initialize MediapipeModel correctly', async () => {
-    expect(model);
+    expect(model).toBeDefined();
     expect(model.shouldUpload).eq(false);
-  });
-
-  it('should try to detect image correctly', async () => {
-    /** This doesn't work, since mediapipe doesn't run without a browser */
-    /*
-    const fileBuffer = fs.readFileSync('src/model/__tests__/testImage.png');
-
-    // Create an ArrayBuffer from the file data
-    const arrayBuffer = Uint8Array.from(fileBuffer).buffer;
-
-    // Create a Blob from the ArrayBuffer
-    const blob = arrayBufferToBlob(arrayBuffer, 'text/plain');
-
-    // Create a File object from the Blob
-    const file = blobToFile(blob, 'file.txt');
-    const imageFile = ImageFile.create(file);
-    let detectionResults;
-    let errorFlag = false;
-
-    try {
-      detectionResults = await model.detect(imageFile);
-    } catch (error) {
-      errorFlag = true;
-    }
-
-    expect(detectionResults || errorFlag);
-    */
   });
 
   it('should return correct model type', async () => {

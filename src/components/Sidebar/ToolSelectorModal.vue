@@ -75,7 +75,7 @@ watch(localOpen, (newValue) => {
           </h3>
         </div>
         <div>
-          <BFormCheckbox :id="tool.Tool" size="lg" :switch="true" v-model="tool.Active" />
+          <BFormCheckbox :id="tool.Tool" v-model="tool.Active" size="lg" :switch="true" />
         </div>
       </div>
       {{ tool.Description }}

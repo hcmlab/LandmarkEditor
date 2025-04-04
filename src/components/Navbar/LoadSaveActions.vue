@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue';
+import { BDropdownItem, BNavItemDropdown } from 'bootstrap-vue-next';
 import { Point3D } from '@/graph/point3d';
 import { Point2D } from '@/graph/point2d';
 import ButtonWithIcon from '@/components/MenuItems/ButtonWithIcon.vue';
@@ -8,10 +9,10 @@ import { FileAnnotationHistory } from '@/cache/fileAnnotationHistory';
 import { useAnnotationToolStore } from '@/stores/annotationToolStore';
 import { AnnotationTool } from '@/enums/annotationTool';
 import { SaveStatus } from '@/enums/saveStatus';
-import { type AnnotationData, type ToolConfig, isToolConfig } from '@/graph/serialisedData.ts';
-import { useFaceMeshConfig } from '@/stores/ToolSpecific/faceMeshConfig.ts';
-import { useHandConfig } from '@/stores/ToolSpecific/handConfig.ts';
-import { usePoseConfig } from '@/stores/ToolSpecific/poseConfig.ts';
+import { type AnnotationData, type ToolConfig, isToolConfig } from '@/graph/serialisedData';
+import { useFaceMeshConfig } from '@/stores/ToolSpecific/faceMeshConfig';
+import { useHandConfig } from '@/stores/ToolSpecific/handConfig';
+import { usePoseConfig } from '@/stores/ToolSpecific/poseConfig';
 
 const tools = useAnnotationToolStore();
 const faceConfig = useFaceMeshConfig();
@@ -87,7 +88,7 @@ function onFileLoad(reader: FileReader): void {
     if (!history) {
       throw new Error(`Tried to load annotation data for nonexistent file: ${filename}`);
     }
-    let h = FileAnnotationHistory.fromJson(
+    const h = FileAnnotationHistory.fromJson(
       rawData,
       history.file,
       (id, neighbors) => new Point3D(id, 0, 0, 0, neighbors)
@@ -100,7 +101,7 @@ function onFileLoad(reader: FileReader): void {
     // Add tools that are in the annotation data but not used already
     // eslint-disable-next-line no-loops/no-loops
     for (const key of h.keys()) {
-      if (!tools.getUsedTools().has(key)) {
+      if (!tools.tools.has(key)) {
         tools.tools.add(key);
       }
     }
@@ -142,14 +143,14 @@ function parseToolConfigData(parsedData: AnnotationData): void {
 }
 
 function handleLeave(event: BeforeUnloadEvent) {
-  const histories = tools.getAllHistories();
+  const histories = tools.allHistories;
 
   if (!Array.isArray(histories)) {
     throw new Error('Failed to retrieve histories for saving during shutdown');
   }
 
   histories.forEach((h: FileAnnotationHistory<Point2D>) => {
-    tools.getUsedTools().forEach((tool) => {
+    tools.tools.forEach((tool) => {
       const model = tools.getModel(tool);
       if (!model) {
         throw new Error('Failed to retrieve model for saving during shutdown');
@@ -162,6 +163,7 @@ function handleLeave(event: BeforeUnloadEvent) {
 
   if (tools.histories.unsaved.length > 0) {
     event.preventDefault();
+    // This is marked as deprecated. If you check the tooltip in webstorm, it says that this can be done to support legacy browsers.
     event.returnValue = '';
   }
 }
@@ -170,7 +172,7 @@ onMounted(() => {
   imageInput.value.onchange = () => {
     if (imageInput.value.files) {
       const files: File[] = Array.from(imageInput.value.files);
-      files.forEach((f) => tools.histories.add(f, tools.getUsedModels()));
+      files.forEach((f) => tools.histories.add(f, tools.getModels));
     }
   };
 
@@ -192,20 +194,20 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <input id="image-input" type="file" accept="image/*" multiple hidden ref="imageInput" />
+  <input id="image-input" ref="imageInput" type="file" accept="image/*" multiple hidden />
   <input
     id="annotation-input"
+    ref="annotationInput"
     type="file"
     accept=".json,application/json"
     hidden
-    ref="annotationInput"
   />
   <BNavItemDropdown
+    id="file-dropdown"
     text="File"
     class="pt-1"
     variant="light"
     auto-close="outside"
-    id="file-dropdown"
   >
     <BDropdownItem>
       <button-with-icon

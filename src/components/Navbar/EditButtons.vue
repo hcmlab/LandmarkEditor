@@ -5,22 +5,22 @@ import { useAnnotationToolStore } from '@/stores/annotationToolStore';
 const tools = useAnnotationToolStore();
 
 function undo() {
-  const selectedHistory = tools.getSelectedHistory();
+  const selectedHistory = tools.selectedHistory;
   if (!selectedHistory) {
     throw new Error('Could not retrieve selected history');
   }
-  tools.getUsedTools().forEach((tool) => {
+  tools.tools.forEach((tool) => {
     selectedHistory.previous(tool);
   });
   return false;
 }
 
 function redo() {
-  const selectedHistory = tools.getSelectedHistory();
+  const selectedHistory = tools.selectedHistory;
   if (!selectedHistory) {
     throw new Error('Could not retrieve selected history');
   }
-  tools.getUsedTools().forEach((tool) => {
+  tools.tools.forEach((tool) => {
     selectedHistory.next(tool);
   });
 }
@@ -31,7 +31,7 @@ function reset() {
 </script>
 
 <template>
-  <BNavItemDropdown text="Edit" class="pt-1" variant="light" id="edit-dropdown">
+  <BNavItemDropdown id="edit-dropdown" text="Edit" class="pt-1" variant="light">
     <BDropdownItem>
       <button-with-icon
         text="Undo"

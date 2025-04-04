@@ -11,7 +11,7 @@ const props = defineProps<{
 const tools = useAnnotationToolStore();
 
 const isDetected = computed(() => {
-  const h = tools.getSelectedHistory();
+  const h = tools.selectedHistory;
   if (!h) return true;
   const graph = h.get(props.tool);
   if (!graph) return false;

@@ -57,17 +57,17 @@ function runUpdate() {
 
 <template>
   <ProcessingSpinner :running="processing" />
-  <NotDetectedWarning :tool="AnnotationTool.Pose" text="No pose detected" v-if="!processing" />
+  <NotDetectedWarning v-if="!processing" :tool="AnnotationTool.Pose" text="No pose detected" />
   <ThresholdDragBar
+    v-model="minDetectionConfidence"
     top-text="Minimum Detection Confidence"
     icon="bi-speedometer2"
-    v-model="minDetectionConfidence"
     @change="updateDetectionConfidence(minDetectionConfidence)"
   />
   <ThresholdDragBar
+    v-model="minPresenceConfidence"
     top-text="Minimum Presence Confidence"
     icon="bi-speedometer2"
-    v-model="minPresenceConfidence"
     @change="updatePresenceConfidence(minPresenceConfidence)"
   />
   <div class="d-flex flex-row justify-content-center align-items-center">
@@ -83,11 +83,11 @@ function runUpdate() {
     </BButton>
   </div>
   <BModal
-    title="Pose model type information"
-    @close="showModelInfoModal = false"
     v-model="showModelInfoModal"
+    title="Pose model type information"
     :cancel-disabled="true"
     centered
+    @close="showModelInfoModal = false"
   >
     <p>
       You can choose different weights and setups for the pose estimation model. The type describes

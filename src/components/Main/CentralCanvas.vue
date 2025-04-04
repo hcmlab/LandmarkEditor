@@ -24,7 +24,7 @@ onMounted(() => {
   window.addEventListener('resize', onResize);
   if (!canvas.value) return;
   Editor.setCanvas(canvas.value);
-  tools.getUsedTools().forEach((tool) => {
+  tools.tools.forEach((tool) => {
     editors.value.push(fromTool(tool));
   });
   Editor.draw();
@@ -56,7 +56,7 @@ watch(
 );
 
 watch(
-  () => tools.getSelectedHistory(),
+  () => tools.selectedHistory,
   async (value) => {
     if (!value) {
       throw new Error('Failed to get selected History');
@@ -149,7 +149,7 @@ const onResize = () => {
 </script>
 
 <template>
-  <div class="w-70 border" id="canvas-div">
+  <div id="canvas-div" class="w-70 border">
     <UserOverwriteModal class="top-0 start-0 w-100 h-100" />
     <canvas
       id="canvas"

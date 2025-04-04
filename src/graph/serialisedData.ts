@@ -1,5 +1,5 @@
-import { AnnotationTool } from '@/enums/annotationTool.ts';
-import type { PoseModelType } from '@/model/mediapipePose.ts';
+import { AnnotationTool } from '@/enums/annotationTool';
+import type { PoseModelType } from '@/model/mediapipePose';
 
 export interface PointData {
   deleted: boolean;
@@ -38,15 +38,7 @@ export interface AnnotationData {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function isToolConfig(value: any): value is ToolConfig {
-  return (
-    value &&
-    typeof value === 'object' &&
-    'handMinDetectionConf' in value &&
-    'handMinPresenceConf' in value &&
-    'faceMinDetectionConf' in value &&
-    'faceMinPresenceConf' in value &&
-    'poseMinDetectionConf' in value &&
-    'poseMinPresenceConf' in value &&
-    'poseModelType' in value
-  );
+  const requiredKeys: (keyof ToolConfig)[] = Object.keys({} as ToolConfig) as (keyof ToolConfig)[];
+
+  return value && typeof value === 'object' && requiredKeys.every((key) => key in value);
 }

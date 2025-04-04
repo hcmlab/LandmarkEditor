@@ -1,11 +1,13 @@
 import { defineStore } from 'pinia';
 
-export const usePointMoveConfig = defineStore({
-  id: 'pointMoveConfig',
+export const usePointMoveConfig = defineStore('pointMoveConfig', {
   state: (): {
     dragDepth: number;
   } => ({
     dragDepth: 0
   }),
+  getters: {
+    dragDepth: (state) => state.dragDepth
+  },
   actions: {}
 });

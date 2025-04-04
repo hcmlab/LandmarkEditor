@@ -1,8 +1,7 @@
 import { defineStore } from 'pinia';
 import type { HandLandmarkerOptions } from '@mediapipe/tasks-vision';
 
-export const useHandConfig = defineStore({
-  id: 'handConfig',
+export const useHandConfig = defineStore('handConfig', {
   state: (): {
     processing: boolean;
     modelOptions: HandLandmarkerOptions;
@@ -21,5 +20,13 @@ export const useHandConfig = defineStore({
       minHandPresenceConfidence: 0.5
     }
   }),
+  getters: {
+    isProcessing: (state) => state.processing,
+    getModelOptions: (state) => {
+      const config = state.modelOptions;
+      if (!config.baseOptions) throw new Error('Model config is not properly set');
+      return config;
+    }
+  },
   actions: {}
 });

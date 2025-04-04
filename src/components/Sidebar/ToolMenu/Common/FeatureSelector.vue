@@ -19,7 +19,7 @@ const tools = useAnnotationToolStore();
     <button-with-icon
       :text="feature"
       :icon="
-        tools.getSelectedHistory()?.deletedFeatures.has(feature)
+        tools.selectedHistory?.deletedFeatures.has(feature)
           ? 'bi-arrow-counterclockwise'
           : 'bi-trash'
       "
