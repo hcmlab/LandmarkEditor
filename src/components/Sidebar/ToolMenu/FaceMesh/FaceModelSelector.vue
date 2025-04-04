@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import * as bootstrap from 'bootstrap'; // import statically - don't grab it from a cdn
 import $ from 'jquery';
 import { ref } from 'vue';
@@ -108,41 +108,39 @@ function setModel(model: ModelType): boolean {
 <template>
   <div>
     <div class="d-flex flex-column w-100 align-items-center">
-      <div>
-        <b>
-          <i class="bi bi-cpu me-1"></i>
-          Model
-        </b>
-      </div>
+      <b>
+        <i class="bi bi-cpu me-1"></i>
+        Model
+      </b>
     </div>
 
-    <fieldset class="btn-group" role="group" style="padding: 0.2vw; width: 100%">
+    <fieldset aria-label="Face mesh model selection" class="btn-group w-100 p-1">
       <input
         id="btnModelMediapipe"
-        type="radio"
-        class="btn-check"
-        name="btnradio"
         autocomplete="off"
         checked
-        @change="setModel(ModelType.mediapipeFaceMesh)"
-      />
-      <label class="btn btn-outline-secondary" for="btnModelMediapipe"
-        >Mediapipe<br /><small>Offline</small></label
-      >
-      <input
-        id="btnModelCustom"
-        type="radio"
         class="btn-check"
         name="btnradio"
+        type="radio"
+        @change="setModel(ModelType.mediapipeFaceMesh)"
+      />
+      <label class="btn btn-outline-secondary" for="btnModelMediapipe">
+        Mediapipe<br /><small>Offline</small>
+      </label>
+
+      <input
+        id="btnModelCustom"
         autocomplete="off"
+        class="btn-check"
+        name="btnradio"
+        type="radio"
         @change="openModal"
       />
-      <label class="btn btn-outline-secondary" for="btnModelCustom"
-        >Webservice<br /><small>Online</small></label
-      >
+      <label class="btn btn-outline-secondary" for="btnModelCustom">
+        Webservice<br /><small>Online</small>
+      </label>
     </fieldset>
-    <div class="mb-2" />
-  </div>
 
-  <WebserviceSelectModal v-model="showModal" @change-model="(model) => setModel(model)" />
+    <WebserviceSelectModal v-model="showModal" @change-model="(model) => setModel(model)" />
+  </div>
 </template>

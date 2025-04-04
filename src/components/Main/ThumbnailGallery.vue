@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import { ref } from 'vue';
 import { ImageFile } from '@/imageFile';
 import ThumbnailContainer from '@/components/ThumbnailContainer.vue';
@@ -40,7 +40,10 @@ function selectThumbnail(file: ImageFile): void {
 </script>
 
 <template>
-  <div id="thumbnail-gallery" class="w-10 h-100 rounded-start-1 shadow bg-light text-center">
+  <div
+    id="thumbnail-gallery"
+    class="min-w-10rem w-10rem h-100 rounded-start-1 shadow bg-light text-center"
+  >
     <div class="h-5 d-flex align-items-center justify-content-center">
       <h6>
         Images
@@ -52,7 +55,7 @@ function selectThumbnail(file: ImageFile): void {
         <small v-else>(0)</small>
       </h6>
     </div>
-    <div id="thumbnailGalleryContainer" class="overflow-auto mh-95 w-100">
+    <div id="thumbnailGalleryContainer" class="overflow-y-auto mh-95 w-100">
       <div v-for="(history, idx) in histories" :key="idx" class="pb-1">
         <ThumbnailContainer
           :id="'thumbnail-' + idx"

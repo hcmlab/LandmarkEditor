@@ -5,9 +5,6 @@ import { imageFromFile } from '@/util/imageFromFile';
 import { BodyFeature } from '@/enums/bodyFeature';
 
 export abstract class Editor {
-  protected static canvas: HTMLCanvasElement;
-  protected static ctx: CanvasRenderingContext2D;
-
   public static zoomScale: number = 1;
   public static offsetX: number = 0;
   public static offsetY: number = 0;
@@ -18,11 +15,11 @@ export abstract class Editor {
   public static isMoving: boolean = false;
   public static isPanning: boolean = false;
   public static image: HTMLImageElement = new Image();
+  protected static canvas: HTMLCanvasElement;
+  protected static ctx: CanvasRenderingContext2D;
   private static allEditors: Editor[] = [];
 
-  protected static add(editor: Editor) {
-    Editor.allEditors.push(editor);
-  }
+  public abstract get tool(): AnnotationTool;
 
   public static remove(tool: AnnotationTool) {
     Editor.allEditors = Editor.allEditors.filter((e) => e.tool !== tool);
@@ -104,16 +101,6 @@ export abstract class Editor {
     Editor.offsetY = Editor.mouseY - dy * Editor.zoomScale;
   }
 
-  protected static clearAndFitToWindow() {
-    const canvas = $('#canvas-div');
-    if (!canvas) return;
-    if (!canvas.innerWidth) return;
-    if (!canvas.innerHeight) return;
-    if (!Editor.canvas) return;
-    Editor.canvas.width = <number>canvas.innerWidth();
-    Editor.canvas.height = <number>canvas.innerHeight();
-  }
-
   public static center() {
     Editor.clearAndFitToWindow();
     const scaleX = Editor.canvas.width / Editor.image.width;
@@ -125,9 +112,71 @@ export abstract class Editor {
     Editor.ctx.scale(Editor.zoomScale, Editor.zoomScale);
   }
 
-  public abstract draw(): void;
+  protected static add(editor: Editor) {
+    Editor.allEditors.push(editor);
+  }
 
-  public abstract get tool(): AnnotationTool;
+  /** ---------- Utility functions for drawing on the canvas -------------------------------------------------------- */
+
+  protected static clearAndFitToWindow() {
+    const canvas = $('#canvas-div');
+    const sidebar = $('#sidebar');
+    const thumbnailGallery = $('#thumbnail-gallery');
+    if (!canvas) return;
+    if (!canvas.innerHeight()) return;
+    if (!Editor.canvas) return;
+    const sidebarWidth = sidebar.outerWidth();
+    if (!sidebarWidth) return;
+    const thumbnailGalleryWidth = thumbnailGallery.outerWidth();
+    if (!thumbnailGalleryWidth) return;
+    console.log('sidebarWidth', sidebarWidth);
+    console.log('thumbnailGalleryWidth', thumbnailGalleryWidth);
+    console.log('windowWidth', window.innerWidth);
+    Editor.canvas.width = window.innerWidth - sidebarWidth - thumbnailGalleryWidth;
+    console.log('canvasWidth', Editor.canvas.width);
+    Editor.canvas.height = <number>canvas.innerHeight();
+  }
+
+  protected static drawCircleAtPoint(
+    ctx: CanvasRenderingContext2D,
+    color: string,
+    x: number,
+    y: number,
+    radius: number
+  ) {
+    if (!ctx) return;
+    ctx.beginPath();
+    ctx.fillStyle = color;
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  /**
+   * Returns a list of features, where the model takes precedence. For example because it provides more details.
+   * @param tool tool to check
+   * @protected
+   */
+  protected static toolProvidesFeatures(tool: AnnotationTool) {
+    switch (tool) {
+      case AnnotationTool.BackgroundDrawer:
+        return [];
+      case AnnotationTool.FaceMesh:
+        return [
+          BodyFeature.Nose,
+          BodyFeature.Mouth,
+          BodyFeature.Right_Eye,
+          BodyFeature.Right_Eyebrow,
+          BodyFeature.Left_Eye,
+          BodyFeature.Left_Eyebrow
+        ];
+      case AnnotationTool.Hand:
+        return [BodyFeature.Left_Hand, BodyFeature.Right_Hand];
+      case AnnotationTool.Pose:
+        return [];
+    }
+  }
+
+  public abstract draw(): void;
 
   /* handle the user interacting with the canvas */
   /**
@@ -137,6 +186,7 @@ export abstract class Editor {
    */
 
   public abstract onMove(relativeMouseX: number, relativeMouseY: number): void;
+
   /**
    * called if the mouse is down and moved, if the editing flag is **NOT** set
    * @param relativeMouseX relative X position of the mouse towards the top left corner of the canvas
@@ -187,45 +237,4 @@ export abstract class Editor {
    * Notifies that an editing action was finished. Handle annotation data archiving.
    */
   public abstract onPointsEdited(): void;
-
-  /** ---------- Utility functions for drawing on the canvas -------------------------------------------------------- */
-
-  protected static drawCircleAtPoint(
-    ctx: CanvasRenderingContext2D,
-    color: string,
-    x: number,
-    y: number,
-    radius: number
-  ) {
-    if (!ctx) return;
-    ctx.beginPath();
-    ctx.fillStyle = color;
-    ctx.arc(x, y, radius, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  /**
-   * Returns a list of features, where the model takes precedence. For example because it provides more details.
-   * @param tool tool to check
-   * @protected
-   */
-  protected static toolProvidesFeatures(tool: AnnotationTool) {
-    switch (tool) {
-      case AnnotationTool.BackgroundDrawer:
-        return [];
-      case AnnotationTool.FaceMesh:
-        return [
-          BodyFeature.Nose,
-          BodyFeature.Mouth,
-          BodyFeature.Right_Eye,
-          BodyFeature.Right_Eyebrow,
-          BodyFeature.Left_Eye,
-          BodyFeature.Left_Eyebrow
-        ];
-      case AnnotationTool.Hand:
-        return [BodyFeature.Left_Hand, BodyFeature.Right_Hand];
-      case AnnotationTool.Pose:
-        return [];
-    }
-  }
 }

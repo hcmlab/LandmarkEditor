@@ -7,7 +7,7 @@ export const usePointMoveConfig = defineStore('pointMoveConfig', {
     dragDepth: 0
   }),
   getters: {
-    dragDepth: (state) => state.dragDepth
+    getDragDepth: (state) => state.dragDepth
   },
   actions: {}
 });

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { BDropdownItem, BNavItemDropdown } from 'bootstrap-vue-next';
 import { Point3D } from '@/graph/point3d';
@@ -9,7 +9,7 @@ import { FileAnnotationHistory } from '@/cache/fileAnnotationHistory';
 import { useAnnotationToolStore } from '@/stores/annotationToolStore';
 import { AnnotationTool } from '@/enums/annotationTool';
 import { SaveStatus } from '@/enums/saveStatus';
-import { type AnnotationData, type ToolConfig, isToolConfig } from '@/graph/serialisedData';
+import { type AnnotationData, isToolConfig, type ToolConfig } from '@/graph/serialisedData';
 import { useFaceMeshConfig } from '@/stores/ToolSpecific/faceMeshConfig';
 import { useHandConfig } from '@/stores/ToolSpecific/handConfig';
 import { usePoseConfig } from '@/stores/ToolSpecific/poseConfig';
@@ -116,8 +116,8 @@ function getToolConfigData() {
     faceMinPresenceConf: faceConfig.modelOptions.minFacePresenceConfidence,
     handMinDetectionConf: handConfig.modelOptions.minHandDetectionConfidence,
     handMinPresenceConf: handConfig.modelOptions.minHandPresenceConfidence,
-    poseMinDetectionConf: poseConfig.modelConfig.minPoseDetectionConfidence,
-    poseMinPresenceConf: poseConfig.modelConfig.minPosePresenceConfidence,
+    poseMinDetectionConf: poseConfig.getModelConfig.minPoseDetectionConfidence,
+    poseMinPresenceConf: poseConfig.getModelConfig.minPosePresenceConfidence,
     poseModelType: poseConfig.modelType
   } as ToolConfig;
 }
@@ -137,8 +137,8 @@ function parseToolConfigData(parsedData: AnnotationData): void {
   handConfig.modelOptions.minHandDetectionConfidence = toolConfig.handMinDetectionConf;
   handConfig.modelOptions.minHandPresenceConfidence = toolConfig.handMinPresenceConf;
 
-  poseConfig.modelConfig.minPoseDetectionConfidence = toolConfig.poseMinDetectionConf;
-  poseConfig.modelConfig.minPosePresenceConfidence = toolConfig.poseMinPresenceConf;
+  poseConfig.getModelConfig.minPoseDetectionConfidence = toolConfig.poseMinDetectionConf;
+  poseConfig.getModelConfig.minPosePresenceConfidence = toolConfig.poseMinPresenceConf;
   poseConfig.modelType = toolConfig.poseModelType;
 }
 
@@ -194,42 +194,42 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <input id="image-input" ref="imageInput" type="file" accept="image/*" multiple hidden />
+  <input id="image-input" ref="imageInput" accept="image/*" hidden multiple type="file" />
   <input
     id="annotation-input"
     ref="annotationInput"
-    type="file"
     accept=".json,application/json"
     hidden
+    type="file"
   />
   <BNavItemDropdown
     id="file-dropdown"
-    text="File"
-    class="pt-1"
-    variant="light"
     auto-close="outside"
+    class="pt-1"
+    text="File"
+    variant="light"
   >
     <BDropdownItem>
       <button-with-icon
-        text="Open Images"
         icon="bi-folder2-open"
         shortcut="Control+O"
+        text="Open Images"
         @click="openImage"
       />
     </BDropdownItem>
     <BDropdownItem>
       <button-with-icon
-        text="Open Annotations"
         icon="bi-folder2-open"
         shortcut="Control+A"
+        text="Open Annotations"
         @click="openAnnotation"
       />
     </BDropdownItem>
     <BDropdownItem>
       <button-with-icon
-        text="Download all"
         icon="bi-download"
         shortcut="Control+S"
+        text="Download all"
         @click="saveAnnotation(true)"
       />
     </BDropdownItem>

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import { ref, watch } from 'vue';
 import { AnnotationTool } from '@/enums/annotationTool';
 import { useAnnotationToolStore } from '@/stores/annotationToolStore';
@@ -39,9 +39,9 @@ function closeModal() {
 function onOkModal() {
   toolsDesc.forEach((tool) => {
     if (tool.Active) {
-      tools.tools.add(tool.Tool);
+      tools.getTools.add(tool.Tool);
     } else {
-      tools.tools.delete(tool.Tool);
+      tools.getTools.delete(tool.Tool);
     }
   });
   closeModal();
@@ -75,7 +75,7 @@ watch(localOpen, (newValue) => {
           </h3>
         </div>
         <div>
-          <BFormCheckbox :id="tool.Tool" v-model="tool.Active" size="lg" :switch="true" />
+          <BFormCheckbox :id="tool.Tool" v-model="tool.Active" :switch="true" size="lg" />
         </div>
       </div>
       {{ tool.Description }}

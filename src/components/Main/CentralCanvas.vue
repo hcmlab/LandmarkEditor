@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import { onMounted, onUnmounted, ref, watch } from 'vue';
 import { Editor } from '@/Editors/Editor';
 import { useAnnotationToolStore } from '@/stores/annotationToolStore';
@@ -149,7 +149,7 @@ const onResize = () => {
 </script>
 
 <template>
-  <div id="canvas-div" class="w-70 border">
+  <div id="canvas-div" class="d-flex flex-grow-1 flex-shrink-1 border border-5">
     <UserOverwriteModal class="top-0 start-0 w-100 h-100" />
     <canvas
       id="canvas"
@@ -157,9 +157,9 @@ const onResize = () => {
       class=""
       @mousedown="handleMouseDown"
       @mousemove="handleMouseMove"
+      @mouseout="handleMouseUp"
       @mouseup="handleMouseUp"
       @wheel="handleWheel"
-      @mouseout="handleMouseUp"
     />
   </div>
 </template>

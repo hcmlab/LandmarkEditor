@@ -1,7 +1,7 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import { ref, watch } from 'vue';
 import ViewOptions from '@/components/Sidebar/ToolMenu/FaceMesh/ViewOptions.vue';
-import ModelSelector from '@/components/Sidebar/ToolMenu/FaceMesh/ModelSelector.vue';
+import FaceModelSelector from '@/components/Sidebar/ToolMenu/FaceMesh/FaceModelSelector.vue';
 import { AnnotationTool } from '@/enums/annotationTool.ts';
 import NotDetectedWarning from '@/components/Sidebar/ToolMenu/Common/NotDetectedWarning.vue';
 import ProcessingSpinner from '@/components/Sidebar/ToolMenu/Common/ProcessingSpinner.vue';
@@ -69,17 +69,17 @@ function runUpdate() {
   <ProcessingSpinner :running="processing" />
   <NotDetectedWarning v-if="!processing" :tool="AnnotationTool.FaceMesh" text="No face detected" />
   <ViewOptions />
-  <ModelSelector />
+  <FaceModelSelector />
   <ThresholdDragBar
     v-model="minDetectionConfidence"
-    top-text="Minimum Detection Confidence"
     icon="bi-speedometer2"
+    top-text="Minimum Detection Confidence"
     @change="updateDetectionConfidence(minDetectionConfidence)"
   />
   <ThresholdDragBar
     v-model="minPresenceConfidence"
-    top-text="Minimum Presence Confidence"
     icon="bi-speedometer2"
+    top-text="Minimum Presence Confidence"
     @change="updatePresenceConfidence(minPresenceConfidence)"
   />
 </template>

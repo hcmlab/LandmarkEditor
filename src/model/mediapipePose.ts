@@ -31,19 +31,30 @@ export class MediapipePoseModel implements ModelApi<Point2D> {
   private poseLandmarker: PoseLandmarker | undefined = undefined;
   private readonly config = usePoseConfig();
 
-  private async initialize(): Promise<void> {
-    return FilesetResolver.forVisionTasks(
-      'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
-    )
-      .then((filesetResolver) =>
-        PoseLandmarker.createFromOptions(filesetResolver, this.config.modelConfig)
-      )
-      .then((landmarker) => {
-        this.poseLandmarker = landmarker;
+  get shouldUpload(): boolean {
+    return false;
+  }
+
+  private static async processResult(
+    res: PoseLandmarkerResult
+  ): Promise<Graph<Point2D> | undefined> {
+    if (res.landmarks.length == 0) return undefined;
+
+    const graphs = await Promise.all(
+      res.landmarks.map(async (landmarks) => {
+        const points = await Promise.all(
+          landmarks.map(async (dict, idx) => {
+            const ids = Array.from(findNeighbourPointIds(idx, PoseLandmarker.POSE_CONNECTIONS, 1));
+            return new Point2D(idx, dict.x, dict.y, ids);
+          })
+        );
+        return new Graph(points);
       })
-      .catch((e) => {
-        throw new Error(`Failed to load model: ${e}`);
-      });
+    );
+    if (graphs) {
+      return graphs[0];
+    }
+    return undefined;
   }
 
   async detect(imageFile: ImageFile): Promise<Graph<Point2D>[] | undefined> {
@@ -73,34 +84,8 @@ export class MediapipePoseModel implements ModelApi<Point2D> {
     });
   }
 
-  private static async processResult(
-    res: PoseLandmarkerResult
-  ): Promise<Graph<Point2D> | undefined> {
-    if (res.landmarks.length == 0) return undefined;
-
-    const graphs = await Promise.all(
-      res.landmarks.map(async (landmarks) => {
-        const points = await Promise.all(
-          landmarks.map(async (dict, idx) => {
-            const ids = Array.from(findNeighbourPointIds(idx, PoseLandmarker.POSE_CONNECTIONS, 1));
-            return new Point2D(idx, dict.x, dict.y, ids);
-          })
-        );
-        return new Graph(points);
-      })
-    );
-    if (graphs) {
-      return graphs[0];
-    }
-    return undefined;
-  }
-
   async updateSettings(): Promise<void> {
     return this.initialize();
-  }
-
-  get shouldUpload(): boolean {
-    return false;
   }
 
   tool(): AnnotationTool {
@@ -109,5 +94,20 @@ export class MediapipePoseModel implements ModelApi<Point2D> {
 
   async uploadAnnotations(_: AnnotationData): Promise<void | Response> {
     return Promise.resolve();
+  }
+
+  private async initialize(): Promise<void> {
+    return FilesetResolver.forVisionTasks(
+      'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
+    )
+      .then((filesetResolver) =>
+        PoseLandmarker.createFromOptions(filesetResolver, this.config.getModelConfig)
+      )
+      .then((landmarker) => {
+        this.poseLandmarker = landmarker;
+      })
+      .catch((e) => {
+        throw new Error(`Failed to load model: ${e}`);
+      });
   }
 }

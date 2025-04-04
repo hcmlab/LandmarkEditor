@@ -1,5 +1,6 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import { computed, defineAsyncComponent } from 'vue';
+import { BAccordion, BAccordionItem, BButton } from 'bootstrap-vue-next';
 import { useAnnotationToolStore } from '@/stores/annotationToolStore';
 import { AnnotationTool } from '@/enums/annotationTool';
 import CommonToolOptions from '@/components/Sidebar/CommonToolOptions.vue';
@@ -32,7 +33,7 @@ function componentFromTool(tool: AnnotationTool) {
 <template>
   <div v-if="tools.length > 0" class="mt-1">
     <!-- The list was intended to be sortable,but the faders break with this - sortablejs-vue3 -->
-    <BAccordion free class="bg-light rounded-1">
+    <BAccordion class="bg-light rounded-1" free>
       <CommonToolOptions />
       <div v-for="element in tools" :key="element.id">
         <div :key="element.id" class="draggable mt-2">
@@ -45,8 +46,8 @@ function componentFromTool(tool: AnnotationTool) {
             <!-- remove -->
             <hr />
             <BButton
-              variant="outline-dark"
               class="w-100"
+              variant="outline-dark"
               @click="annotationTools.tools.delete(element.tool)"
             >
               <i class="bi bi-trash"></i>
