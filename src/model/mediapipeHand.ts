@@ -17,19 +17,25 @@ export class MediapipeHandModel implements ModelApi<Point2D> {
   private handLandmarker: HandLandmarker | undefined = undefined;
   private readonly config = useHandConfig();
 
-  private async initialize(): Promise<void> {
-    return FilesetResolver.forVisionTasks(
-      'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
-    )
-      .then((filesetResolver) =>
-        HandLandmarker.createFromOptions(filesetResolver, this.config.modelOptions)
-      )
-      .then((landmarker) => {
-        this.handLandmarker = landmarker;
-      })
-      .catch((e) => {
-        throw new Error(`Failed to load model: ${e}`);
-      });
+  get shouldUpload(): boolean {
+    return false;
+  }
+
+  private static async processResult(
+    res: HandLandmarkerResult
+  ): Promise<Graph<Point2D> | undefined> {
+    if (res.landmarks.length == 0) return undefined;
+
+    const points = res.landmarks.flat().map((landmark, idx) => {
+      const ids = Array.from(findNeighbourPointIds(idx, HandLandmarker.HAND_CONNECTIONS, 1));
+      return new Point2D(idx, landmark.x, landmark.y, ids);
+    });
+
+    const graph = new Graph(points);
+    if (points) {
+      return graph;
+    }
+    return undefined;
   }
 
   async detect(imageFile: ImageFile): Promise<Graph<Point2D>[] | undefined> {
@@ -63,23 +69,6 @@ export class MediapipeHandModel implements ModelApi<Point2D> {
     });
   }
 
-  private static async processResult(
-    res: HandLandmarkerResult
-  ): Promise<Graph<Point2D> | undefined> {
-    if (res.landmarks.length == 0) return undefined;
-
-    const points = res.landmarks.flat().map((landmark, idx) => {
-      const ids = Array.from(findNeighbourPointIds(idx, HandLandmarker.HAND_CONNECTIONS, 1));
-      return new Point2D(idx, landmark.x, landmark.y, ids);
-    });
-
-    const graph = new Graph(points);
-    if (points) {
-      return graph;
-    }
-    return undefined;
-  }
-
   updateSettings() {
     if (!this.handLandmarker) return Promise.resolve();
     return this.initialize();
@@ -89,11 +78,22 @@ export class MediapipeHandModel implements ModelApi<Point2D> {
     return AnnotationTool.Hand;
   }
 
-  get shouldUpload(): boolean {
-    return false;
-  }
-
   async uploadAnnotations(_: AnnotationData): Promise<void | Response> {
     return Promise.resolve();
+  }
+
+  private async initialize(): Promise<void> {
+    return FilesetResolver.forVisionTasks(
+      'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
+    )
+      .then((filesetResolver) =>
+        HandLandmarker.createFromOptions(filesetResolver, this.config.getModelOptions)
+      )
+      .then((landmarker) => {
+        this.handLandmarker = landmarker;
+      })
+      .catch((e) => {
+        throw new Error(`Failed to load model: ${e}`);
+      });
   }
 }

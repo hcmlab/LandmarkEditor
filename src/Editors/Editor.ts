@@ -129,11 +129,7 @@ export abstract class Editor {
     if (!sidebarWidth) return;
     const thumbnailGalleryWidth = thumbnailGallery.outerWidth();
     if (!thumbnailGalleryWidth) return;
-    console.log('sidebarWidth', sidebarWidth);
-    console.log('thumbnailGalleryWidth', thumbnailGalleryWidth);
-    console.log('windowWidth', window.innerWidth);
     Editor.canvas.width = window.innerWidth - sidebarWidth - thumbnailGalleryWidth;
-    console.log('canvasWidth', Editor.canvas.width);
     Editor.canvas.height = <number>canvas.innerHeight();
   }
 

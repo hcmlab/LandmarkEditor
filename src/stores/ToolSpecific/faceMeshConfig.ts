@@ -2,11 +2,7 @@ import { defineStore } from 'pinia';
 import type { FaceLandmarkerOptions } from '@mediapipe/tasks-vision';
 
 export const useFaceMeshConfig = defineStore('faceMeshConfig', {
-  state: (): {
-    showTesselation: boolean;
-    processing: boolean;
-    modelOptions: FaceLandmarkerOptions;
-  } => ({
+  state: () => ({
     showTesselation: false,
     processing: false,
     modelOptions: {
@@ -22,7 +18,30 @@ export const useFaceMeshConfig = defineStore('faceMeshConfig', {
       numFaces: 1,
       outputFacialTransformationMatrixes: true,
       outputFaceBlendshapes: true
-    }
+    } as FaceLandmarkerOptions
   }),
-  actions: {}
+  getters: {
+    minDetectionConfidence: (state) => state.modelOptions.minFaceDetectionConfidence,
+    minPresenceConfidence: (state) => state.modelOptions.minFacePresenceConfidence
+  },
+  actions: {
+    setProcessing(processing: boolean) {
+      this.processing = processing;
+    },
+    setShowTesselation(showTesselation: boolean) {
+      this.showTesselation = showTesselation;
+    },
+    setMinDetectionConfidence(faceDetectionConfidence: number) {
+      if (faceDetectionConfidence < 0 || faceDetectionConfidence > 1) {
+        throw new Error('Face detection confidence must be between 0 and 1');
+      }
+      this.modelOptions.minFaceDetectionConfidence = faceDetectionConfidence;
+    },
+    setMinPresenceConfidence(facePresence: number) {
+      if (facePresence < 0 || facePresence > 1) {
+        throw new Error('Face presence confidence must be between 0 and 1');
+      }
+      this.modelOptions.minFacePresenceConfidence = facePresence;
+    }
+  }
 });

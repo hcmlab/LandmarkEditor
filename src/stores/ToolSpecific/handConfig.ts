@@ -2,10 +2,7 @@ import { defineStore } from 'pinia';
 import type { HandLandmarkerOptions } from '@mediapipe/tasks-vision';
 
 export const useHandConfig = defineStore('handConfig', {
-  state: (): {
-    processing: boolean;
-    modelOptions: HandLandmarkerOptions;
-  } => ({
+  state: () => ({
     processing: false,
     modelOptions: {
       baseOptions: {
@@ -18,7 +15,7 @@ export const useHandConfig = defineStore('handConfig', {
       numHands: 2,
       minHandDetectionConfidence: 0.5,
       minHandPresenceConfidence: 0.5
-    }
+    } as HandLandmarkerOptions
   }),
   getters: {
     isProcessing: (state) => state.processing,
@@ -26,7 +23,25 @@ export const useHandConfig = defineStore('handConfig', {
       const config = state.modelOptions;
       if (!config.baseOptions) throw new Error('Model config is not properly set');
       return config;
-    }
+    },
+    minDetectionConfidence: (state) => state.modelOptions.minHandDetectionConfidence,
+    minPresenceConfidence: (state) => state.modelOptions.minHandPresenceConfidence
   },
-  actions: {}
+  actions: {
+    setProcessing(processing: boolean) {
+      this.processing = processing;
+    },
+    setMinDetectionConfidence(handDetectionConfidence: number) {
+      if (handDetectionConfidence < 0 || handDetectionConfidence > 1) {
+        throw new Error('Hand detection confidence must be between 0 and 1');
+      }
+      this.modelOptions.minHandDetectionConfidence = handDetectionConfidence;
+    },
+    setMinPresenceConfidence(handPresence: number) {
+      if (handPresence < 0 || handPresence > 1) {
+        throw new Error('Hand presence confidence must be between 0 and 1');
+      }
+      this.modelOptions.minHandPresenceConfidence = handPresence;
+    }
+  }
 });

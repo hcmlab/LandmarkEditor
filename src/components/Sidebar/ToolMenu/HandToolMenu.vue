@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import { ref, watch } from 'vue';
 import { AnnotationTool } from '@/enums/annotationTool.ts';
 import NotDetectedWarning from '@/components/Sidebar/ToolMenu/Common/NotDetectedWarning.vue';
@@ -12,7 +12,7 @@ const tools = useAnnotationToolStore();
 const processing = ref(false);
 
 watch(
-  () => config.processing,
+  () => config.isProcessing,
   (newVal) => {
     processing.value = newVal;
   },
@@ -21,19 +21,19 @@ watch(
     immediate: true
   }
 );
-const minDetectionConfidence = ref(50);
-const minPresenceConfidence = ref(50);
+const minDetectionConfidence = ref((config.minDetectionConfidence || 0.5) * 100);
+const minPresenceConfidence = ref((config.minPresenceConfidence || 0.5) * 100);
 
 const updateDetectionConfidence = (newVal: number) => {
   if (!tools.tools.has(AnnotationTool.Hand)) return;
-  config.modelOptions.minHandDetectionConfidence = newVal / 100;
+  config.setMinDetectionConfidence(newVal / 100);
 
   runUpdate();
 };
 
 const updatePresenceConfidence = (newVal: number) => {
   if (!tools.tools.has(AnnotationTool.Hand)) return;
-  config.modelOptions.minHandPresenceConfidence = newVal / 100;
+  config.setMinPresenceConfidence(newVal / 100);
 
   runUpdate();
 };
@@ -51,14 +51,14 @@ function runUpdate() {
   <NotDetectedWarning v-if="!processing" :tool="AnnotationTool.Hand" text="No hand(s) detected" />
   <ThresholdDragBar
     v-model="minDetectionConfidence"
-    top-text="Minimum Detection Confidence"
     icon="bi-speedometer2"
+    top-text="Minimum Detection Confidence"
     @change="updateDetectionConfidence(minDetectionConfidence)"
   />
   <ThresholdDragBar
     v-model="minPresenceConfidence"
-    top-text="Minimum Presence Confidence"
     icon="bi-speedometer2"
+    top-text="Minimum Presence Confidence"
     @change="updatePresenceConfidence(minPresenceConfidence)"
   />
 </template>

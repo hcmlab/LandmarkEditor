@@ -5,7 +5,7 @@ import { PoseModelType } from '@/model/mediapipePose.ts';
 export const usePoseConfig = defineStore('poseConfig', {
   state: () => ({
     processing: false,
-    modelConfig: {
+    modelOptions: {
       baseOptions: {
         modelAssetPath: '',
         delegate: undefined
@@ -21,8 +21,8 @@ export const usePoseConfig = defineStore('poseConfig', {
   }),
   getters: {
     isProcessing: (state) => state.processing,
-    getModelConfig: (state) => {
-      const config = state.modelConfig;
+    getModelOptions: (state) => {
+      const config = state.modelOptions;
       if (!config.baseOptions) throw new Error('Model config is not properly set');
       switch (state.modelType) {
         case PoseModelType.LITE:
@@ -40,7 +40,28 @@ export const usePoseConfig = defineStore('poseConfig', {
       }
       return config;
     },
-    getModelType: (state) => state.modelType
+    getModelType: (state) => state.modelType,
+    minDetectionConfidence: (state) => state.modelOptions.minPoseDetectionConfidence,
+    minPresenceConfidence: (state) => state.modelOptions.minPosePresenceConfidence
   },
-  actions: {}
+  actions: {
+    setProcessing(processing: boolean) {
+      this.processing = processing;
+    },
+    setMinDetectionConfidence(poseDetectionConfidence: number) {
+      if (poseDetectionConfidence < 0 || poseDetectionConfidence > 1) {
+        throw new Error('Pose detection confidence must be between 0 and 1');
+      }
+      this.modelOptions.minPoseDetectionConfidence = poseDetectionConfidence;
+    },
+    setMinPresenceConfidence(posePresence: number) {
+      if (posePresence < 0 || posePresence > 1) {
+        throw new Error('Pose presence confidence must be between 0 and 1');
+      }
+      this.modelOptions.minPosePresenceConfidence = posePresence;
+    },
+    setModelType(modelType: PoseModelType) {
+      this.modelType = modelType;
+    }
+  }
 });

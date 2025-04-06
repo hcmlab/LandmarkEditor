@@ -9,7 +9,7 @@ import { FileAnnotationHistory } from '@/cache/fileAnnotationHistory';
 import { useAnnotationToolStore } from '@/stores/annotationToolStore';
 import { AnnotationTool } from '@/enums/annotationTool';
 import { SaveStatus } from '@/enums/saveStatus';
-import { type AnnotationData, isToolConfig, type ToolConfig } from '@/graph/serialisedData';
+import { type AnnotationData, type GraphData, type ToolConfig } from '@/graph/serialisedData';
 import { useFaceMeshConfig } from '@/stores/ToolSpecific/faceMeshConfig';
 import { useHandConfig } from '@/stores/ToolSpecific/handConfig';
 import { usePoseConfig } from '@/stores/ToolSpecific/poseConfig';
@@ -66,13 +66,17 @@ function saveAnnotation(download: boolean): void {
 function onFileLoad(reader: FileReader): void {
   const parsedData: AnnotationData = JSON.parse(reader.result as string);
   Object.keys(parsedData).forEach((filename) => {
-    const rawData = parsedData[filename];
-    if (!rawData) {
-      throw new Error(`Failed to retrieve annotation data for ${filename}`);
+    // Skip the config key
+    if (filename === 'config') {
+      return;
     }
     // cancel for additional keys that don't describe graphs
-    if (typeof rawData === 'string' || isToolConfig(rawData)) {
+    if (typeof parsedData[filename] === 'string') {
       return;
+    }
+    const rawData = parsedData[filename] as GraphData;
+    if (!rawData) {
+      throw new Error(`Failed to retrieve annotation data for ${filename}`);
     }
     const sha = rawData.sha256;
     if (!sha) {
@@ -112,12 +116,13 @@ function onFileLoad(reader: FileReader): void {
 
 function getToolConfigData() {
   return {
-    faceMinDetectionConf: faceConfig.modelOptions.minFaceDetectionConfidence,
-    faceMinPresenceConf: faceConfig.modelOptions.minFacePresenceConfidence,
-    handMinDetectionConf: handConfig.modelOptions.minHandDetectionConfidence,
-    handMinPresenceConf: handConfig.modelOptions.minHandPresenceConfidence,
-    poseMinDetectionConf: poseConfig.getModelConfig.minPoseDetectionConfidence,
-    poseMinPresenceConf: poseConfig.getModelConfig.minPosePresenceConfidence,
+    faceMinDetectionConf: faceConfig.minDetectionConfidence,
+    faceMinPresenceConf: faceConfig.minPresenceConfidence,
+    faceTesselation: faceConfig.showTesselation,
+    handMinDetectionConf: handConfig.minDetectionConfidence,
+    handMinPresenceConf: handConfig.minPresenceConfidence,
+    poseMinDetectionConf: poseConfig.minDetectionConfidence,
+    poseMinPresenceConf: poseConfig.minPresenceConfidence,
     poseModelType: poseConfig.modelType
   } as ToolConfig;
 }
@@ -128,18 +133,22 @@ function parseToolConfigData(parsedData: AnnotationData): void {
     return; // No tool config data to parse
   }
 
-  if (!isToolConfig(toolConfig)) {
-    throw new Error('Invalid tool config data format');
-  }
-  faceConfig.modelOptions.minFaceDetectionConfidence = toolConfig.faceMinDetectionConf;
-  faceConfig.modelOptions.minFacePresenceConfidence = toolConfig.faceMinPresenceConf;
+  if (toolConfig.faceMinDetectionConf != null)
+    faceConfig.setMinDetectionConfidence(toolConfig.faceMinDetectionConf);
+  if (toolConfig.faceMinPresenceConf != null)
+    faceConfig.setMinPresenceConfidence(toolConfig.faceMinPresenceConf);
+  if (toolConfig.faceTesselation != null) faceConfig.setShowTesselation(toolConfig.faceTesselation);
 
-  handConfig.modelOptions.minHandDetectionConfidence = toolConfig.handMinDetectionConf;
-  handConfig.modelOptions.minHandPresenceConfidence = toolConfig.handMinPresenceConf;
+  if (toolConfig.handMinDetectionConf != null)
+    handConfig.setMinDetectionConfidence(toolConfig.handMinDetectionConf);
+  if (toolConfig.handMinPresenceConf != null)
+    handConfig.setMinPresenceConfidence(toolConfig.handMinPresenceConf);
 
-  poseConfig.getModelConfig.minPoseDetectionConfidence = toolConfig.poseMinDetectionConf;
-  poseConfig.getModelConfig.minPosePresenceConfidence = toolConfig.poseMinPresenceConf;
-  poseConfig.modelType = toolConfig.poseModelType;
+  if (toolConfig.poseMinDetectionConf != null)
+    poseConfig.setMinDetectionConfidence(toolConfig.poseMinDetectionConf);
+  if (toolConfig.poseMinPresenceConf != null)
+    poseConfig.setMinPresenceConfidence(toolConfig.poseMinPresenceConf);
+  if (toolConfig.poseModelType != null) poseConfig.setModelType(toolConfig.poseModelType);
 }
 
 function handleLeave(event: BeforeUnloadEvent) {

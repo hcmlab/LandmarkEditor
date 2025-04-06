@@ -101,7 +101,7 @@ export class MediapipePoseModel implements ModelApi<Point2D> {
       'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
     )
       .then((filesetResolver) =>
-        PoseLandmarker.createFromOptions(filesetResolver, this.config.getModelConfig)
+        PoseLandmarker.createFromOptions(filesetResolver, this.config.getModelOptions)
       )
       .then((landmarker) => {
         this.poseLandmarker = landmarker;

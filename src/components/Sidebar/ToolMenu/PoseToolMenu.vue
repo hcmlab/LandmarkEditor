@@ -14,7 +14,7 @@ const tools = useAnnotationToolStore();
 const processing = ref(false);
 
 watch(
-  () => config.processing,
+  () => config.isProcessing,
   (newVal) => {
     processing.value = newVal;
   },
@@ -23,19 +23,19 @@ watch(
     immediate: true
   }
 );
-const minDetectionConfidence = ref((config.getModelConfig.minPoseDetectionConfidence || 0) * 100);
-const minPresenceConfidence = ref((config.getModelConfig.minPosePresenceConfidence || 0) * 100);
+const minDetectionConfidence = ref((config.minDetectionConfidence || 0.5) * 100);
+const minPresenceConfidence = ref((config.minPresenceConfidence || 0.5) * 100);
 
 const updateDetectionConfidence = (newVal: number) => {
   if (!tools.tools.has(AnnotationTool.Pose)) return;
-  config.getModelConfig.minPoseDetectionConfidence = newVal / 100;
+  config.setMinDetectionConfidence(newVal / 100);
 
   runUpdate();
 };
 
 const updatePresenceConfidence = (newVal: number) => {
   if (!tools.tools.has(AnnotationTool.Pose)) return;
-  config.getModelConfig.minPosePresenceConfidence = newVal / 100;
+  config.setMinPresenceConfidence(newVal / 100);
 
   runUpdate();
 };
