@@ -199,7 +199,7 @@ async function handleImageLoad() {
       orientations.value.filter((value) => value.orientation !== Orientation.center).length === 0
     ) {
       result.value = orientations.value.map((value) => {
-        let res = new MultipleViewImage();
+        const res = new MultipleViewImage();
         res.selected = value.orientation;
         res.center = value as orientationGuessResult;
         return res;
@@ -264,7 +264,7 @@ onBeforeUnmount(() => {
           <div class="d-flex max-h-60vh position-relative">
             <!-- Left Images Section -->
             <h3>
-              <a href="#" @click="openHelp" class="pe-auto">
+              <a href="#" class="pe-auto" @click="openHelp">
                 <i class="bi bi-question-square-fill position-absolute top-0 end-0 zindex-10"></i>
               </a>
             </h3>
@@ -357,7 +357,7 @@ onBeforeUnmount(() => {
       <div class="mt-auto w-100 align-items-center">
         <hr />
         <div class="d-flex align-items-center justify-content-around">
-          <BButton variant="outline-dark" @click="loadImages" class="me-2">
+          <BButton variant="outline-dark" class="me-2" @click="loadImages">
             <BSpinner v-if="processing" small />
             Load
           </BButton>
@@ -373,7 +373,7 @@ onBeforeUnmount(() => {
       </div>
     </div>
   </BModal>
-  <BModal v-model="confirmModal" @ok="save" @cancel="returnToLoad" centered>
+  <BModal v-model="confirmModal" centered @ok="save" @cancel="returnToLoad">
     <div class="d-flex justify-content-around">
       <h1 class="text-center">Selection Finished!<br />Confirm?</h1>
     </div>

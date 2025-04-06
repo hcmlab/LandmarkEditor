@@ -65,9 +65,9 @@ watch(isModalVisible, (newValue) => {
     <div id="urlErrorText" class="text-danger" hidden></div>
     <label for="modelurl" class="form-label" hidden></label>
     <input
+      id="modelurl"
       type="url"
       class="form-control"
-      id="modelurl"
       placeholder="https://example.com/model/api"
       required
     />

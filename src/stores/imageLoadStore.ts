@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia';
 
-export const useImageLoadStore = defineStore({
-  id: 'imageLoad',
+export const useImageLoadStore = defineStore('imageLoad', {
   state: (): {
     showLoadModal: boolean;
   } => ({

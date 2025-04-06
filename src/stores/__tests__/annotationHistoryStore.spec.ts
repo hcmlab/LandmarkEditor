@@ -43,14 +43,14 @@ class MockApi implements ModelApi<Point2D> {
 
 const mockApi = new MockApi();
 
-test('Test store is initially empty', async () => {
+test('Store is initially empty', async () => {
   const store = useAnnotationHistoryStore();
   expect(store.empty()).toEqual(true);
   await store.add(mockFile.center.image.filePointer, mockApi);
   expect(store.empty()).toEqual(false);
 });
 
-test('Test adding', async () => {
+test('adding', async () => {
   const store = useAnnotationHistoryStore();
   await store.add(mockFile.center.image.filePointer, mockApi);
 
@@ -58,7 +58,7 @@ test('Test adding', async () => {
   expect(store.selectedHistory).not.toBeNull();
 });
 
-test('Test find function', async () => {
+test('find function', async () => {
   const store = useAnnotationHistoryStore();
   await store.add(mockFile.center.image.filePointer, mockApi);
 

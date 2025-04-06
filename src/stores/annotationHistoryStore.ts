@@ -11,9 +11,7 @@ import type { orientationGuessResult } from '@/util/orientationGuesser';
 import type { MultipleViewImage } from '@/interface/multiple_view_image';
 import { Orientation } from '@/enums/orientation';
 
-export const useAnnotationHistoryStore = defineStore({
-  id: 'annotationHistory',
-
+export const useAnnotationHistoryStore = defineStore('annotationHistory', {
   state: (): {
     _histories: FileAnnotationHistory<Point3D>[];
     selectedHistory: FileAnnotationHistory<Point3D> | null;

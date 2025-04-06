@@ -50,7 +50,7 @@ const draw = () => {
   ctx.drawImage(image, offX, offY, image.width * scale, image.height * scale);
 };
 
-let iconClass = computed(() => {
+const iconClass = computed(() => {
   switch (props.history.status) {
     case SaveStatus.unedited: {
       return 'bi-floppy text-secondary';
@@ -65,7 +65,7 @@ let iconClass = computed(() => {
   return '';
 });
 
-let iconDescription = computed(() => {
+const iconDescription = computed(() => {
   switch (props.history.status) {
     case SaveStatus.unedited: {
       return 'Annotation has not been Edited';

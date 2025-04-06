@@ -1,3 +1,4 @@
+// eslint-disable-next-line import-x/no-nodejs-modules
 import * as fs from 'node:fs';
 import { mount } from '@vue/test-utils';
 import { beforeAll, describe, expect, it } from 'vitest';
@@ -56,7 +57,7 @@ beforeAll(async () => {
 
 describe('ThumbnailGallery', () => {
   it('should set selectedHistory to the current history upon selectThumbnail function execution', async () => {
-    expect(store.selectedHistory).toBeNull;
+    expect(store.selectedHistory).toBeNull();
 
     const wrapper = mount(ThumbnailGallery);
 

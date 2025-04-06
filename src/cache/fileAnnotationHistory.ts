@@ -27,7 +27,6 @@ export interface GraphData {
  */
 export class FileAnnotationHistory<T extends Point2D> {
   private readonly cacheSize: number;
-  private _currentHistoryIndex: number[] = [0, 0, 0];
   private readonly _file: MultipleViewImage;
 
   /**
@@ -40,33 +39,6 @@ export class FileAnnotationHistory<T extends Point2D> {
     this._file = file;
     this.cacheSize = cacheSize;
     this._status = SaveStatus.unedited;
-  }
-
-  public static FromDetection<T extends Point2D>(
-    file: MultipleViewImage,
-    left: Graph<T> | undefined,
-    center: Graph<T> | undefined,
-    right: Graph<T> | undefined
-  ) {
-    const h = new FileAnnotationHistory<T>(file);
-    if (left) h.__history[FileAnnotationHistory.orientationToIndex(Orientation.left)][0] = left;
-    if (center)
-      h.__history[FileAnnotationHistory.orientationToIndex(Orientation.center)][0] = center;
-    if (right) h.__history[FileAnnotationHistory.orientationToIndex(Orientation.right)][0] = right;
-    return h;
-  }
-
-  private static orientationToIndex(orientation: Orientation) {
-    switch (orientation) {
-      case Orientation.center:
-        return 1;
-      case Orientation.left:
-        return 0;
-      case Orientation.right:
-        return 2;
-      case Orientation.unknown:
-        throw Error('Unknown orientation');
-    }
   }
 
   private _status: SaveStatus;
@@ -97,6 +69,28 @@ export class FileAnnotationHistory<T extends Point2D> {
     };
   }
 
+  protected get history() {
+    return this._history;
+  }
+
+  /**
+   * Returns the current history as a plain object.
+   * If the user used the "undo" feature, any states in the "future" will be ignored
+   */
+  protected get toDictArray(): PointData[][] {
+    return this._history.slice(0, this.currentHistoryIndex + 1).map((graph) => graph.toDictArray());
+  }
+
+  private _currentHistoryIndex: number[] = [0, 0, 0];
+
+  private get currentHistoryIndex() {
+    return this._currentHistoryIndex[FileAnnotationHistory.orientationToIndex(this.file.selected)];
+  }
+
+  private set currentHistoryIndex(value: number) {
+    this._currentHistoryIndex[FileAnnotationHistory.orientationToIndex(this.file.selected)] = value;
+  }
+
   private __history: Graph<T>[][] = [[], [], []];
 
   private get _history() {
@@ -107,24 +101,31 @@ export class FileAnnotationHistory<T extends Point2D> {
     this.__history[FileAnnotationHistory.orientationToIndex(this.file.selected)] = value;
   }
 
-  protected get history() {
-    return this._history;
+  public static FromDetection<T extends Point2D>(
+    file: MultipleViewImage,
+    left: Graph<T> | undefined,
+    center: Graph<T> | undefined,
+    right: Graph<T> | undefined
+  ) {
+    const h = new FileAnnotationHistory<T>(file);
+    if (left) h.__history[FileAnnotationHistory.orientationToIndex(Orientation.left)][0] = left;
+    if (center)
+      h.__history[FileAnnotationHistory.orientationToIndex(Orientation.center)][0] = center;
+    if (right) h.__history[FileAnnotationHistory.orientationToIndex(Orientation.right)][0] = right;
+    return h;
   }
 
-  private get currentHistoryIndex() {
-    return this._currentHistoryIndex[FileAnnotationHistory.orientationToIndex(this.file.selected)];
-  }
-
-  private set currentHistoryIndex(value: number) {
-    this._currentHistoryIndex[FileAnnotationHistory.orientationToIndex(this.file.selected)] = value;
-  }
-
-  /**
-   * Returns the current history as a plain object.
-   * If the user used the "undo" feature, any states in the "future" will be ignored
-   */
-  protected get toDictArray(): PointData[][] {
-    return this._history.slice(0, this.currentHistoryIndex + 1).map((graph) => graph.toDictArray());
+  static orientationToIndex(orientation: Orientation) {
+    switch (orientation) {
+      case Orientation.center:
+        return 1;
+      case Orientation.left:
+        return 0;
+      case Orientation.right:
+        return 2;
+      case Orientation.unknown:
+        throw Error('Unknown orientation');
+    }
   }
 
   /**
@@ -165,20 +166,6 @@ export class FileAnnotationHistory<T extends Point2D> {
    */
   add(item: Graph<T>): void {
     this._add(item, FileAnnotationHistory.orientationToIndex(this.file.selected));
-  }
-
-  private _add(item: Graph<T>, orientationId: number) {
-    if (this._currentHistoryIndex[orientationId] + 1 < this.__history[orientationId].length) {
-      // Delete history stack when moved back and changed something
-      this.__history[orientationId].length = this._currentHistoryIndex[orientationId] + 1;
-    }
-    // only act if a size is provided see Issue #70
-    if (this.cacheSize !== 0 && this.cacheSize === this.__history[orientationId].length) {
-      // Remove the first item as it is too old and cache limit is reached
-      this.__history[orientationId].shift();
-    }
-    this.__history[orientationId].push(item.clone());
-    this._currentHistoryIndex[orientationId] = this.__history[orientationId].length - 1;
   }
 
   /**
@@ -314,6 +301,20 @@ export class FileAnnotationHistory<T extends Point2D> {
         }
       });
     });
+  }
+
+  private _add(item: Graph<T>, orientationId: number) {
+    if (this._currentHistoryIndex[orientationId] + 1 < this.__history[orientationId].length) {
+      // Delete history stack when moved back and changed something
+      this.__history[orientationId].length = this._currentHistoryIndex[orientationId] + 1;
+    }
+    // only act if a size is provided see Issue #70
+    if (this.cacheSize !== 0 && this.cacheSize === this.__history[orientationId].length) {
+      // Remove the first item as it is too old and cache limit is reached
+      this.__history[orientationId].shift();
+    }
+    this.__history[orientationId].push(item.clone());
+    this._currentHistoryIndex[orientationId] = this.__history[orientationId].length - 1;
   }
 
   /**
