@@ -18,8 +18,6 @@ export class FileAnnotationHistory<T extends Point2D> {
   /** Storing the actual history for each tool. The latest item is at the last index. */
   private readonly _history: Map<AnnotationTool, Graph<T>[]> = new Map();
   private readonly _currentHistoryIndex: Map<AnnotationTool, number> = new Map();
-
-  private _status: SaveStatus;
   /** Keeping track of deleted features, used when user actually removes features
    * or if duplicate features are present from different models */
   private readonly _deletedFeatures: Set<BodyFeature> = new Set<BodyFeature>();
@@ -37,13 +35,7 @@ export class FileAnnotationHistory<T extends Point2D> {
     this.clear();
   }
 
-  /********************************************************************************************************************/
-  /*     Getters and setters                                                                                          */
-  /********************************************************************************************************************/
-
-  get file(): ImageFile {
-    return this._file;
-  }
+  private _status: SaveStatus;
 
   get status(): SaveStatus {
     return this._status;
@@ -53,24 +45,71 @@ export class FileAnnotationHistory<T extends Point2D> {
     this._status = value;
   }
 
-  protected history(tool: AnnotationTool) {
-    return this._history.get(tool);
+  get file(): ImageFile {
+    return this._file;
   }
 
   get deletedFeatures() {
     return this._deletedFeatures;
   }
 
-  private currentHistoryIndex(tool: AnnotationTool) {
-    const index = this._currentHistoryIndex.get(tool);
-    if (index === undefined) {
-      throw new Error(`Tried to get history index for unknown tool: ${tool}`);
+  /**
+   * Parses the provided parsed json data into a history. Expects the latest element to be at the end of the array.
+   * @param json the parsed data
+   * @param file the image file, to check the sha
+   * @param newObject a function to create a single Point, used to mitigate the templating.
+   */
+  static fromJson<T extends Point2D>(
+    json: GraphData,
+    file: ImageFile,
+    newObject: (id: number, neighbors: number[]) => T
+  ): Map<AnnotationTool, Graph<T>[]> | undefined {
+    // skip files without annotation
+    if (Object.keys(json).length == 0) {
+      return undefined;
     }
-    return index;
+    const sha = json.sha256;
+    if (!sha) throw new Error('Missing from API!');
+    if (sha !== file.sha) throw new Error('Mismatching sha sent from API!');
+    let graphs = json.points;
+    if (!graphs) throw new Error("Didn't get any points from API!");
+
+    /* Backwards compatibility pt. 1 - data without tool. assumed as face mesh. */
+    if (Array.isArray(graphs)) {
+      /* Backwards compatibility pt. 2 - if the file contains the old Points2D[] format instead of Points2D[][] */
+      if (!Array.isArray(graphs[0])) {
+        graphs = {
+          [AnnotationTool.FaceMesh]: [graphs as unknown as PointData[]]
+        };
+      } else {
+        graphs = {
+          [AnnotationTool.FaceMesh]: graphs
+        };
+      }
+    }
+
+    const res = new Map<AnnotationTool, Graph<T>[]>();
+    Object.keys(graphs).forEach((modelString) => {
+      const model = modelString as AnnotationTool;
+      if (!graphs || model === AnnotationTool.BackgroundDrawer) {
+        return;
+      }
+      const unparsedGraphs = graphs[model];
+      if (!unparsedGraphs) {
+        return;
+      }
+      const parsedGraphs: Graph<T>[] = unparsedGraphs.reduce((prev, graph) => {
+        prev.push(Graph.fromJson(graph, newObject));
+        return prev;
+      }, [] as Graph<T>[]);
+      res.set(model, parsedGraphs);
+    });
+
+    return res;
   }
 
-  private setCurrentHistoryIndex(tool: AnnotationTool, value: number) {
-    this._currentHistoryIndex.set(tool, value);
+  setDeletedFeatures(features: BodyFeature[]) {
+    features.forEach((feature) => this._deletedFeatures.add(feature));
   }
 
   toggleFeature(feature: BodyFeature) {
@@ -81,14 +120,15 @@ export class FileAnnotationHistory<T extends Point2D> {
     }
   }
 
-  /********************************************************************************************************************/
-  /*     Moving the history                                                                                           */
-  /********************************************************************************************************************/
-
   /** Moves to the next history entry. */
   next(tool: AnnotationTool): void {
     this.setIndex(this.currentHistoryIndex(tool) + 1, tool);
   }
+
+  /********************************************************************************************************************/
+  /*     Moving the history                                                                                           */
+
+  /********************************************************************************************************************/
 
   /** Moves to the previous history entry. */
   previous(tool: AnnotationTool): void {
@@ -150,10 +190,6 @@ export class FileAnnotationHistory<T extends Point2D> {
     this._status = SaveStatus.unedited;
   }
 
-  /********************************************************************************************************************/
-  /*     Data Serialization                                                                                           */
-  /********************************************************************************************************************/
-
   /**
    * returns the serialized data of the history, included file sha.
    * @param tool - The annotation tool to serialize. If undefined, all tools will be serialized.
@@ -165,52 +201,14 @@ export class FileAnnotationHistory<T extends Point2D> {
     }
     return {
       points: points,
+      deletedFeatures: Array.from(this._deletedFeatures),
       sha256: this.file.sha
     };
   }
 
-  /**
-   * Go through all tools or the provided one and serialize the data.
-   * @param tool - if provided only this tools will be serialized. Is used to serialize data when sending to the API.
-   * @returns - The serialized data if present. If undefined is returned, no positions were found by the model(s).
-   * @private
-   */
-  private toImageAnnotationData(
-    tool: AnnotationTool | undefined = undefined
-  ): ImageAnnotationData | undefined {
-    const data: ImageAnnotationData = {};
-    const tools = tool ? [tool] : allAnnotationTools;
-    tools.forEach((tool) => {
-      if (tool === AnnotationTool.BackgroundDrawer) {
-        return; // skip background drawer
-      }
-      const h = this.toDictArray(tool);
-      if (h && h.length > 0) {
-        data[tool] = h;
-      }
-    });
-    return data;
-  }
-
-  /**
-   * Serializes the history of the specified tool. Will only serialize the current history index.
-   * Will drop any data if user used the 'undo' feature.
-   * @param tool The annotation tool to serialize.
-   * @returns An array of PointData arrays representing the history.
-   * @throws - Throws an error if the history for the specified tool is not found.
-   *           Should only happen, if the toll is not in the `allAnnotationTools` list.
-   */
-  protected toDictArray(tool: AnnotationTool): PointData[][] | undefined {
-    const h = this._history.get(tool);
-    if (!h) {
-      throw new Error('Failed to retrieve history.');
-    }
-
-    return h.slice(0, this.currentHistoryIndex(tool) + 1).map((graph) => graph.toDictArray());
-  }
-
   /********************************************************************************************************************/
-  /*     Loading Data from other histories                                                                            */
+  /*     Data Serialization                                                                                           */
+
   /********************************************************************************************************************/
 
   /**
@@ -302,57 +300,59 @@ export class FileAnnotationHistory<T extends Point2D> {
     this.setCurrentHistoryIndex(tool, index);
   }
 
+  protected history(tool: AnnotationTool) {
+    return this._history.get(tool);
+  }
+
   /**
-   * Parses the provided parsed json data into a history. Expects the latest element to be at the end of the array.
-   * @param json the parsed data
-   * @param file the image file, to check the sha
-   * @param newObject a function to create a single Point, used to mitigate the templating.
+   * Serializes the history of the specified tool. Will only serialize the current history index.
+   * Will drop any data if user used the 'undo' feature.
+   * @param tool The annotation tool to serialize.
+   * @returns An array of PointData arrays representing the history.
+   * @throws - Throws an error if the history for the specified tool is not found.
+   *           Should only happen, if the toll is not in the `allAnnotationTools` list.
    */
-  static fromJson<T extends Point2D>(
-    json: GraphData,
-    file: ImageFile,
-    newObject: (id: number, neighbors: number[]) => T
-  ): Map<AnnotationTool, Graph<T>[]> | undefined {
-    // skip files without annotation
-    if (Object.keys(json).length == 0) {
-      return undefined;
-    }
-    const sha = json.sha256;
-    if (!sha) throw new Error('Missing from API!');
-    if (sha !== file.sha) throw new Error('Mismatching sha sent from API!');
-    let graphs = json.points;
-    if (!graphs) throw new Error("Didn't get any points from API!");
-
-    /* Backwards compatibility pt. 1 - data without tool. assumed as face mesh. */
-    if (Array.isArray(graphs)) {
-      /* Backwards compatibility pt. 2 - if the file contains the old Points2D[] format instead of Points2D[][] */
-      if (!Array.isArray(graphs[0])) {
-        graphs = {
-          [AnnotationTool.FaceMesh]: [graphs as unknown as PointData[]]
-        };
-      } else {
-        graphs = {
-          [AnnotationTool.FaceMesh]: graphs
-        };
-      }
+  protected toDictArray(tool: AnnotationTool): PointData[][] | undefined {
+    const h = this._history.get(tool);
+    if (!h) {
+      throw new Error('Failed to retrieve history.');
     }
 
-    const res = new Map<AnnotationTool, Graph<T>[]>();
-    Object.keys(graphs).forEach((modelString) => {
-      const model = modelString as AnnotationTool;
-      if (!graphs || model === AnnotationTool.BackgroundDrawer) {
-        return;
+    return h.slice(0, this.currentHistoryIndex(tool) + 1).map((graph) => graph.toDictArray());
+  }
+
+  private currentHistoryIndex(tool: AnnotationTool) {
+    const index = this._currentHistoryIndex.get(tool);
+    if (index === undefined) {
+      throw new Error(`Tried to get history index for unknown tool: ${tool}`);
+    }
+    return index;
+  }
+
+  private setCurrentHistoryIndex(tool: AnnotationTool, value: number) {
+    this._currentHistoryIndex.set(tool, value);
+  }
+
+  /**
+   * Go through all tools or the provided one and serialize the data.
+   * @param tool - if provided only this tools will be serialized. Is used to serialize data when sending to the API.
+   * @returns - The serialized data if present. If undefined is returned, no positions were found by the model(s).
+   * @private
+   */
+  private toImageAnnotationData(
+    tool: AnnotationTool | undefined = undefined
+  ): ImageAnnotationData | undefined {
+    const data: ImageAnnotationData = {};
+    const tools = tool ? [tool] : allAnnotationTools;
+    tools.forEach((tool) => {
+      if (tool === AnnotationTool.BackgroundDrawer) {
+        return; // skip background drawer
       }
-      const unparsedGraphs = graphs[model];
-      if (!unparsedGraphs) {
-        return;
+      const h = this.toDictArray(tool);
+      if (h && h.length > 0) {
+        data[tool] = h;
       }
-      const parsedGraphs: Graph<T>[] = unparsedGraphs.reduce((prev, graph) => {
-        prev.push(Graph.fromJson(graph, newObject));
-        return prev;
-      }, [] as Graph<T>[]);
-      res.set(model, parsedGraphs);
     });
-    return res;
+    return data;
   }
 }

@@ -97,6 +97,7 @@ function onFileLoad(reader: FileReader): void {
       history.file,
       (id, neighbors) => new Point3D(id, 0, 0, 0, neighbors)
     );
+
     if (!h) {
       throw new Error(`Failed to parse histories for ${filename}`);
     }
@@ -110,6 +111,10 @@ function onFileLoad(reader: FileReader): void {
       }
     }
     history.mergeMultipleTools(h);
+
+    if (rawData.deletedFeatures) {
+      history.setDeletedFeatures(rawData.deletedFeatures);
+    }
   });
   parseToolConfigData(parsedData);
 }

@@ -1,5 +1,6 @@
 import { AnnotationTool } from '@/enums/annotationTool';
 import type { PoseModelType } from '@/model/mediapipePose';
+import type { BodyFeature } from '@/enums/bodyFeature.ts';
 
 export interface PointData {
   deleted: boolean;
@@ -17,6 +18,7 @@ export interface ImageAnnotationData {
 
 export interface GraphData {
   points?: ImageAnnotationData;
+  deletedFeatures?: BodyFeature[];
   sha256?: string;
 }
 
