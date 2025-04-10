@@ -11,15 +11,15 @@ import AboutSection from '@/components/Navbar/AboutSection.vue';
       <div class="d-flex flex-row align-items-center">
         <div class="me-3">
           <img
+            id="app-icon"
             src="../../../static/images/FaceMesh.png"
             class="rounded-circle border border-dark border-2 shadow"
             style="width: 2vw; height: 2vw"
             alt="Icon"
-            id="app-icon"
           />
         </div>
         <div>
-          <h5 class="m-0" id="title">Face Mesh Editor</h5>
+          <h5 id="title" class="m-0">Face Mesh Editor</h5>
         </div>
       </div>
     </BNavbarBrand>

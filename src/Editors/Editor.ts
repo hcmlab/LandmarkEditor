@@ -1,11 +1,7 @@
 import $ from 'jquery';
-import type { ImageFile } from '@/imageFile';
 import { AnnotationTool } from '@/enums/annotationTool';
 
 export abstract class Editor {
-  protected static canvas: HTMLCanvasElement;
-  protected static ctx: CanvasRenderingContext2D;
-
   public static zoomScale: number = 1;
   public static offsetX: number = 0;
   public static offsetY: number = 0;
@@ -15,16 +11,39 @@ export abstract class Editor {
   public static mouseY: number = 0;
   public static isMoving: boolean = false;
   public static isPanning: boolean = false;
-  public static image: HTMLImageElement = new Image();
+  protected static canvas: HTMLCanvasElement;
+  protected static ctx: CanvasRenderingContext2D;
+  protected static image: HTMLImageElement = new Image();
   private static allEditors: Editor[] = [];
 
-  protected static add(editor: Editor) {
-    Editor.allEditors.push(editor);
+  protected constructor() {
+    Editor.add(this);
+    Editor.image.onload = () => {
+      if (Editor.image.width === 0) {
+        throw new Error('Tried to load image with 0 width');
+      }
+      if (Editor.image.height === 0) {
+        throw new Error('Tried to load image with 0 height');
+      }
+      // on success reset global zoom and pan
+      Editor.zoomScale = 1;
+      Editor.offsetX = 0;
+      Editor.offsetY = 0;
+
+      Editor.notify((editor) => editor.onBackgroundLoaded());
+      Editor.center();
+      Editor.draw();
+    };
+    Editor.image.onerror = (e) => {
+      throw new Error('Failed to load image: ' + e);
+    };
   }
 
-  public static remove(editor: Editor) {
-    Editor.allEditors = Editor.allEditors.filter((e) => e !== editor);
+  public static get hasImage() {
+    return Editor.image.width !== 0 && Editor.image.height !== 0;
   }
+
+  public abstract get tool(): AnnotationTool;
 
   public static draw() {
     Editor.allEditors.forEach((editor: Editor) => {
@@ -39,51 +58,14 @@ export abstract class Editor {
       window.location.reload();
     }
     Editor.ctx = ctx as CanvasRenderingContext2D;
-    Editor.image.onerror = (e) => {
-      console.error('Error loading image', e);
-      throw new Error('Failed to load image.');
-    };
-  }
-
-  public static async setBackgroundSource(source: ImageFile): Promise<void> {
-    const imageLoadPromise = new Promise<void>((resolve, reject) => {
-      Editor.image.src = source.html;
-      Editor.image.onload = () => {
-        if (Editor.image.width === 0) {
-          reject(new Error('Image loaded with width 0.'));
-        }
-        if (Editor.image.height === 0) {
-          reject(new Error('Image loaded with height 0.'));
-        }
-        resolve();
-      };
-      Editor.image.onerror = (e) => {
-        console.error('Error loading image', e);
-        reject(new Error('Failed to load image.'));
-      };
-    });
-
-    // Wait for the image to load
-    await imageLoadPromise;
-
-    if (Editor.image.width === 0) {
-      throw new Error('image parsed with 0 width');
-    }
-    if (Editor.image.height === 0) {
-      throw new Error('image parsed with 0 height');
-    }
-
-    // on success reset global zoom and pan
-    Editor.zoomScale = 1;
-    Editor.offsetX = 0;
-    Editor.offsetY = 0;
   }
 
   public static pan(deltaX: number, deltaY: number): void {
     Editor.canvas.style.cursor = 'move';
     // update offsets
-    Editor.offsetX += deltaX;
-    Editor.offsetY += deltaY;
+    const rect = Editor.canvas.getBoundingClientRect();
+    Editor.offsetX += (deltaX / rect.width) * Editor.canvas.width;
+    Editor.offsetY += (deltaY / rect.height) * Editor.canvas.height;
   }
 
   public static zoom(out: boolean) {
@@ -103,7 +85,27 @@ export abstract class Editor {
     Editor.offsetY = Editor.mouseY - dy * Editor.zoomScale;
   }
 
-  protected static clearAndFitToWindow() {
+  public static center() {
+    Editor.fitToWindow();
+    const rect = Editor.canvas.getBoundingClientRect();
+    const scaleX = rect.width / Editor.image.width;
+    const scaleY = rect.height / Editor.image.height;
+    Editor.zoomScale = scaleX < scaleY ? scaleX : scaleY;
+    Editor.offsetX = rect.width / 2 - (Editor.image.width / 2) * Editor.zoomScale;
+    Editor.offsetY = rect.height / 2 - (Editor.image.height / 2) * Editor.zoomScale;
+    Editor.ctx.translate(Editor.offsetX, Editor.offsetY);
+    Editor.ctx.scale(Editor.zoomScale, Editor.zoomScale);
+  }
+
+  static remove(editor: Editor) {
+    Editor.allEditors = Editor.allEditors.filter((e) => e !== editor);
+  }
+
+  protected static add(editor: Editor) {
+    Editor.allEditors.push(editor);
+  }
+
+  protected static fitToWindow() {
     const canvas = $('#canvas-div');
     if (!canvas) return;
     if (!canvas.innerWidth) return;
@@ -113,20 +115,31 @@ export abstract class Editor {
     Editor.canvas.height = <number>canvas.innerHeight();
   }
 
-  public static center() {
-    Editor.clearAndFitToWindow();
-    const scaleX = Editor.canvas.width / Editor.image.width;
-    const scaleY = Editor.canvas.height / Editor.image.height;
-    Editor.zoomScale = scaleX < scaleY ? scaleX : scaleY;
-    Editor.offsetX = Editor.canvas.width / 2 - (Editor.image.width / 2) * Editor.zoomScale;
-    Editor.offsetY = Editor.canvas.height / 2 - (Editor.image.height / 2) * Editor.zoomScale;
-    Editor.ctx.translate(Editor.offsetX, Editor.offsetY);
-    Editor.ctx.scale(Editor.zoomScale, Editor.zoomScale);
+  /**
+   * Calls the given callback function with the list of all editors as an argument.
+   * @param callback the function to call
+   */
+  protected static notify(callback: (editors: Editor) => void) {
+    this.allEditors.forEach((e) => callback(e));
+  }
+
+  /** ---------- Utility functions for drawing on the canvas -------------------------------------------------------- */
+
+  protected static drawCircleAtPoint(
+    ctx: CanvasRenderingContext2D,
+    color: string,
+    x: number,
+    y: number,
+    radius: number
+  ) {
+    if (!ctx) return;
+    ctx.beginPath();
+    ctx.fillStyle = color;
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.fill();
   }
 
   public abstract draw(): void;
-
-  public abstract get tool(): AnnotationTool;
 
   /* handle the user interacting with the canvas */
   /**
@@ -136,6 +149,7 @@ export abstract class Editor {
    */
 
   public abstract onMove(relativeMouseX: number, relativeMouseY: number): void;
+
   /**
    * called if the mouse is down and moved, if the editing flag is **NOT** set
    * @param relativeMouseX relative X position of the mouse towards the top left corner of the canvas
@@ -186,20 +200,4 @@ export abstract class Editor {
    * Notifies that an editing action was finished. Handle annotation data archiving.
    */
   public abstract onPointsEdited(): void;
-
-  /** ---------- Utility functions for drawing on the canvas -------------------------------------------------------- */
-
-  protected static drawCircleAtPoint(
-    ctx: CanvasRenderingContext2D,
-    color: string,
-    x: number,
-    y: number,
-    radius: number
-  ) {
-    if (!ctx) return;
-    ctx.beginPath();
-    ctx.fillStyle = color;
-    ctx.arc(x, y, radius, 0, Math.PI * 2);
-    ctx.fill();
-  }
 }

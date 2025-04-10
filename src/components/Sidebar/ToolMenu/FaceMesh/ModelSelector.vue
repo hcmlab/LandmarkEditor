@@ -51,7 +51,7 @@ function setModel(model: ModelType): boolean {
           localStorage.setItem('apiUrl', url);
           const notificationText = $('#saveNotificationText');
           notificationText.text('Webservice url saved!');
-          annotationHistoryStore.histories.forEach((history) => {
+          annotationHistoryStore.histories().forEach((history) => {
             modelStore.model?.detect(history.file).then((graphs) => {
               if (graphs === null) {
                 return;
@@ -108,22 +108,22 @@ function setModel(model: ModelType): boolean {
 
     <fieldset class="btn-group" role="group" style="padding: 0.2vw; width: 100%">
       <input
+        id="btnModelMediapipe"
         type="radio"
         class="btn-check"
         name="btnradio"
-        id="btnModelMediapipe"
         autocomplete="off"
-        @change="setModel(ModelType.mediapipe)"
         checked
+        @change="setModel(ModelType.mediapipe)"
       />
       <label class="btn btn-outline-secondary" for="btnModelMediapipe"
         >Mediapipe<br /><small>Offline</small></label
       >
       <input
+        id="btnModelCustom"
         type="radio"
         class="btn-check"
         name="btnradio"
-        id="btnModelCustom"
         autocomplete="off"
         @change="openModal"
       />
@@ -134,5 +134,5 @@ function setModel(model: ModelType): boolean {
     <div class="mb-2" />
   </div>
 
-  <WebserviceSelectModal @changeModel="(model) => setModel(model)" v-model="showModal" />
+  <WebserviceSelectModal v-model="showModal" @change-model="(model) => setModel(model)" />
 </template>

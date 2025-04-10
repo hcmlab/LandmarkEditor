@@ -26,11 +26,6 @@ a[shortcut]:after {
     content: '</td><td style="text-align: end;"><kbd>CTRL</kbd> + <kbd>O</kbd></td></tr></table>';
 }
 
-.checkmark-container {
-    width: 2.0rem;
-    height: 2.0rem;
-}
-
 .overlap-container {
     display: grid;
 

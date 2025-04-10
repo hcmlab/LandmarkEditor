@@ -8,15 +8,17 @@ import ButtonWithIcon from '@/components/MenuItems/ButtonWithIcon.vue';
 import getFormattedTimestamp from '@/util/formattedTimestamp';
 import { FileAnnotationHistory } from '@/cache/fileAnnotationHistory';
 import type { AnnotationData } from '@/model/modelApi';
+import { useImageLoadStore } from '@/stores/imageLoadStore';
 
 const modelStore = useModelStore();
 const annotationHistoryStore = useAnnotationHistoryStore();
+const imageLoadStore = useImageLoadStore();
 
 const imageInput = ref();
 const annotationInput = ref();
 
 function openImage(): void {
-  imageInput.value.click();
+  imageLoadStore.showLoadModal = true;
 }
 
 function openAnnotation() {
@@ -78,7 +80,7 @@ onMounted(() => {
           // Todo: inform the user the data cant be parsed for this image
           return;
         }
-        let h = FileAnnotationHistory.fromJson(rawData, history.file,(id, neighbors) => new Point3D(id, 0, 0, 0, neighbors));
+        const h = FileAnnotationHistory.fromJson(rawData, history.file,(id, neighbors) => new Point3D(id, 0, 0, 0, neighbors));
         if (!h) {
           // Todo: error popup
           return;
@@ -105,14 +107,14 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <input id=image-input type=file accept=image/* multiple hidden ref="imageInput">
-  <input id=annotation-input type=file accept=.json,application/json hidden ref="annotationInput">
+  <input id=image-input ref="imageInput" type=file accept=image/* multiple hidden>
+  <input id=annotation-input ref="annotationInput" type=file accept=.json,application/json hidden>
   <BNavItemDropdown
+    id="file-dropdown"
     text="File"
     class="pt-1"
     variant="light"
     auto-close="outside"
-    id="file-dropdown"
   >
     <BDropdownItem>
       <button-with-icon

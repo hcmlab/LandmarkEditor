@@ -4,6 +4,7 @@ import Sidebar from '@/components/Main/SidebarContainer.vue';
 import CentralCanvas from '@/components/Main/CentralCanvas.vue';
 import ThumbnailGallery from '@/components/Main/ThumbnailGallery.vue';
 import TopNavbar from '@/components/Main/TopNavbar.vue';
+import ImageLoadModal from '@/components/ImageLoadModal.vue';
 
 onMounted(() => {
   const elements = document.querySelectorAll('[aria-keyshortcuts]');
@@ -42,5 +43,6 @@ onMounted(() => {
       <CentralCanvas />
       <ThumbnailGallery />
     </div>
+    <ImageLoadModal />
   </div>
 </template>

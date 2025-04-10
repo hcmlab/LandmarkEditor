@@ -1,3 +1,6 @@
+import type { Matrix } from 'mathjs';
+import { math } from '@/util/math';
+
 /**
  * Represents a 2D point with an ID, coordinates, and neighbor information.
  */
@@ -61,7 +64,20 @@ export class Point2D {
     this._deleted = value;
   }
 
-  private _x: number;
+  private _visible: boolean = false;
+
+  /**
+   * Gets or sets whether the point is visible from the camera.
+   */
+  get visible(): boolean {
+    return this._visible;
+  }
+
+  set visible(value: boolean) {
+    this._visible = value;
+  }
+
+  protected _x: number;
 
   /**
    * Gets or sets the x-coordinate of the point.
@@ -71,11 +87,11 @@ export class Point2D {
     return this._x;
   }
 
-  set x(value: number) {
-    this._x = value;
+  set x(new_x) {
+    this._x = new_x;
   }
 
-  private _y: number;
+  protected _y: number;
 
   /**
    * Gets or sets the y-coordinate of the point.
@@ -85,13 +101,13 @@ export class Point2D {
     return this._y;
   }
 
-  set y(value: number) {
-    this._y = value;
+  set y(new_y) {
+    this._y = new_y;
   }
 
   /**
    * Returns a string representation of the point.
-   * @returns {string} - A formatted string with point details.
+   * @returns - A formatted string with point details.
    */
   toString() {
     return `Point2D(id=${this.id}, x=${this.x}, y=${this.y})`;
@@ -99,15 +115,30 @@ export class Point2D {
 
   /**
    * Retrieves the unique ID of the point.
-   * @returns {number} - The point's ID.
+   * @returns - The point's ID.
    */
   get id() {
     return this._id;
   }
 
+  get matrix(): Matrix {
+    return math.matrix([this.x, this.y, 1]);
+  }
+
+  set matrix(matrix: Matrix) {
+    if (matrix.size()[0] !== 3) {
+      throw new Error('Point2D.matrix: Invalid matrix size.');
+    }
+    if (matrix.get([2]) !== 1) {
+      throw new Error(`Invalid matrix value at last row, must be 1. Was: ${matrix.get([2])}.`);
+    }
+    this._x = matrix.get([0]);
+    this._y = matrix.get([1]);
+  }
+
   /**
    * Retrieves a copy of the neighbor IDs.
-   * @returns {number[]} - An array of neighbor IDs.
+   * @returns - An array of neighbor IDs.
    */
   getNeighbourIds() {
     return [...this.neighbourIds];
@@ -115,28 +146,29 @@ export class Point2D {
 
   /**
    * Moves the point to the specified coordinates.
-   * @param {Point2D} point - The target point.
+   * @param point - The target point.
    */
   moveTo(point: Point2D): void {
-    this.x = point.x;
-    this.y = point.y;
+    this._x = point.x;
+    this._y = point.y;
   }
 
   /**
    * Creates a shallow copy of the point.
-   * @returns {Point2D} - A new Point2D instance with cloned properties.
+   * @returns - A new Point2D instance with cloned properties.
    */
   clone() {
     const copy = new Point2D(this.id, this._x, this._y, this.neighbourIds);
     copy.hovered = this.hovered;
     copy.deleted = this.deleted;
     copy.selected = this.selected;
+    copy.visible = this.visible;
     return copy;
   }
 
   /**
    * Converts the point to a dictionary object.
-   * @returns {object} - A dictionary containing point properties.
+   * @returns - A dictionary containing point properties.
    */
   toDict() {
     return {
@@ -148,5 +180,22 @@ export class Point2D {
       // selected: this.selected,
       // neighbourIds: this.neighbourIds
     };
+  }
+
+  /**
+   * Performs vector addition in-place.
+   * @param other - The point to add to this point.
+   * @returns - This point, after modification.
+   */
+  public add<T extends Point2D>(other: T): this {
+    this._x += other.x;
+    this._y += other.y;
+    return this;
+  }
+
+  public sub<T extends Point2D>(other: T): this {
+    this._x -= other.x;
+    this._y -= other.y;
+    return this;
   }
 }

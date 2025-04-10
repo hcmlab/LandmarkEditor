@@ -1,8 +1,6 @@
 import { defineStore } from 'pinia';
 
-export const useFaceMeshConfig = defineStore({
-  id: 'faceMeshConfig',
-
+export const useFaceMeshConfig = defineStore('faceMeshConfig', {
   state: (): {
     dragDepth: number;
     showTesselation: boolean;

@@ -20,8 +20,10 @@ $utilities: map-merge(
           (
             10: 10%,
             20: 20%,
+            33: 33%,
             70: 70%,
-            15vh: 15vh,
+            15vw: 15vw,
+            5vw: 5vw,
           ),
         ),
       ),
@@ -32,7 +34,9 @@ $utilities: map-merge(
         values: map-merge(
           map-get(map-get($utilities, "height"), "values"),
           (
+            60vh: 60vh,
             15vh: 15vh,
+            5vh: 5vh,
             5: 5%,
             10: 10%,
             90: 90%,
@@ -48,7 +52,8 @@ $utilities: map-merge(
           map-get(map-get($utilities, "max-height"), "values"),
           (
             50: 50%,
-            95: 95%
+            95: 95%,
+            60vh: 60vh
           )
         ),
       ),

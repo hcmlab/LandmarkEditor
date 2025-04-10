@@ -1,28 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { WebServiceModel } from '../webservice';
 import { urlError } from '../../enums/urlError';
 
 describe('WebServiceModel class', () => {
-  describe('detect function', () => {
-    it('should return a Graph instance when a valid imageFile is given', async () => {
-      // Your test code here
-    });
-
-    it('should return an Error when an invalid imageFile is given', async () => {
-      // Your test code here
-    });
-  });
-
-  describe('uploadAnnotations function', () => {
-    it('should return a Response when valid annotationsJson is given', async () => {
-      // Your test code here
-    });
-
-    it('should return an Error when invalid annotationsJson is given', async () => {
-      // Your test code here
-    });
-  });
-
   describe('verifyUrl function', () => {
     it('should return null when a valid URL is given', async () => {
       const goodUrl = 'https://www.google.com';

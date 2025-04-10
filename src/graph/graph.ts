@@ -1,9 +1,11 @@
-import { FaceLandmarker } from '@mediapipe/tasks-vision';
+import { FaceLandmarker, type NormalizedLandmark } from '@mediapipe/tasks-vision';
 import { Point2D } from './point2d';
 import type { ModelApi } from '@/model/modelApi';
-import type { ImageFile } from '@/imageFile';
-import type { PointData } from '@/cache/fileAnnotationHistory';
 import { findNeighbourPointIds } from '@/graph/face_landmarks_features';
+import type { PointData } from '@/cache/fileAnnotationHistory';
+import { Point3D } from '@/graph/point3d';
+
+import type { MultipleViewImage } from '@/interface/multiple_view_image';
 
 /**
  * Represents a graph of points in a 2D space.
@@ -30,19 +32,6 @@ export class Graph<P extends Point2D> {
   }
 
   /**
-   * marks all listed points as deleted from graph
-   * @param pointIds points to delete
-   * @private
-   */
-  deletePoints(pointIds: number[]): void {
-    this.points.forEach((point) => {
-      if (pointIds.includes(point.id)) {
-        point.deleted = true;
-      }
-    });
-  }
-
-  /**
    * Creates a Graph instance from a JSON object. Expects to be verified
    * @param jsonObject - An array of point objects in JSON format.
    * @param newObject - A function to create a new point object. Should call the new constructor and load the id.
@@ -58,11 +47,51 @@ export class Graph<P extends Point2D> {
           dict.id,
           findNeighbourPointIds(dict.id, FaceLandmarker.FACE_LANDMARKS_TESSELATION, 1)
         );
-        // @ts-expect-error: built in method uses readonly
-        delete dict['id'];
-        return Object.assign(point, dict);
+        // Manually assign properties from dict to point
+        Object.keys(dict).forEach((key) => {
+          if (key !== 'id') {
+            (point as unknown as Record<string, unknown>)[key] = dict[key as keyof PointData];
+          }
+        });
+        return point;
       })
     );
+  }
+
+  static fromMesh<P extends Point2D>(mesh: NormalizedLandmark[]): Graph<P> {
+    const points: P[] = mesh
+      .map((dict, idx) => {
+        const ids = Array.from(
+          findNeighbourPointIds(idx, FaceLandmarker.FACE_LANDMARKS_TESSELATION, 1)
+        );
+        return new Point3D(idx, dict.x, dict.y, dict.z, ids);
+      })
+      .map((point) => point as unknown as P)
+      // filter out the iris markings
+      .filter((point) => {
+        return ![
+          ...FaceLandmarker.FACE_LANDMARKS_LEFT_IRIS.map((con) => con.start),
+          ...FaceLandmarker.FACE_LANDMARKS_RIGHT_IRIS.map((con) => con.start)
+        ].includes(point.id);
+      });
+    return new Graph<P>(points);
+  }
+
+  static detect<P extends Point2D>(api: ModelApi<P>, file: MultipleViewImage) {
+    return api.detect(file);
+  }
+
+  /**
+   * marks all listed points as deleted from graph
+   * @param pointIds points to delete
+   * @private
+   */
+  deletePoints(pointIds: number[]): void {
+    this.points.forEach((point) => {
+      if (pointIds.includes(point.id)) {
+        point.deleted = true;
+      }
+    });
   }
 
   /**
@@ -93,7 +122,7 @@ export class Graph<P extends Point2D> {
 
   /**
    * Creates a shallow copy of the graph.
-   * @returns {Graph<P>} - A new Graph instance with cloned points.
+   * @returns - A new Graph instance with cloned points.
    */
   clone(): Graph<P> {
     // @ts-expect-error: converting Points to abstract class
@@ -106,9 +135,5 @@ export class Graph<P extends Point2D> {
    */
   toDictArray(): PointData[] {
     return this.points.map((point) => point.toDict());
-  }
-
-  static detect<P extends Point2D>(api: ModelApi<P>, file: ImageFile) {
-    return api.detect(file);
   }
 }

@@ -7,24 +7,25 @@ const annotationHistoryStore = useAnnotationHistoryStore();
 const modelStore = useModelStore();
 
 function undo(): boolean {
-  annotationHistoryStore.selectedHistory?.previous();
+  annotationHistoryStore.selected()?.previous();
   return false;
 }
 
 function redo(): boolean {
-  annotationHistoryStore.selectedHistory?.next();
+  annotationHistoryStore.selected()?.next();
   return false;
 }
 
 function reset(): boolean {
-  annotationHistoryStore.selectedHistory?.clear();
+  annotationHistoryStore.selected()?.clear();
   runDetection();
   return false;
 }
 
 function runDetection() {
-  const history = annotationHistoryStore.selectedHistory;
+  const history = annotationHistoryStore.selected();
   if (!history) return;
+  if (!history.file.center) return;
   modelStore.model?.detect(history.file).then((graphs) => {
     if (graphs === null) {
       return;
@@ -36,7 +37,7 @@ function runDetection() {
 </script>
 
 <template>
-  <BNavItemDropdown text="Edit" class="pt-1" variant="light" id="edit-dropdown">
+  <BNavItemDropdown id="edit-dropdown" text="Edit" class="pt-1" variant="light">
     <BDropdownItem>
       <button-with-icon
         text="Undo"

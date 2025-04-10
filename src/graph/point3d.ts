@@ -1,5 +1,7 @@
+import { type Matrix } from 'mathjs';
 import { Point2D } from './point2d';
 import type { PointData } from '@/cache/fileAnnotationHistory';
+import { math } from '@/util/math';
 
 /**
  * Represents a 3D point with an ID, coordinates, and neighbor information.
@@ -29,8 +31,8 @@ export class Point3D extends Point2D {
     return this._z;
   }
 
-  set z(value: number) {
-    this._z = value;
+  set z(new_z) {
+    this._z = new_z;
   }
 
   /**
@@ -39,6 +41,13 @@ export class Point3D extends Point2D {
    */
   toString() {
     return `Point3D(id=${this.id}, x=${this.x}, y=${this.y}, z=${this.z})`;
+  }
+
+  moveTo<T extends Point2D>(point: T) {
+    super.moveTo(point);
+    if (point instanceof Point3D) {
+      this._z = point.z;
+    }
   }
 
   /**
@@ -50,6 +59,7 @@ export class Point3D extends Point2D {
     copy.hovered = this.hovered;
     copy.deleted = this.deleted;
     copy.selected = this.selected;
+    copy.visible = this.visible;
     return copy;
   }
 
@@ -65,5 +75,42 @@ export class Point3D extends Point2D {
       z: this.z,
       deleted: this.deleted
     };
+  }
+
+  public get matrix(): Matrix {
+    return math.matrix([this.x, this.y, this.z, 1]);
+  }
+
+  public set matrix(matrix: Matrix) {
+    if (matrix.size()[0] !== 4) {
+      throw new Error('Matrix must have 4 rows');
+    }
+    if (matrix.get([3]) !== 1) {
+      throw new Error(`Invalid matrix value at last row, must be 1. Was: ${matrix.get([3])}.`);
+    }
+    this._x = matrix.get([0]);
+    this._y = matrix.get([1]);
+    this._z = matrix.get([2]);
+  }
+
+  /**
+   * Performs the addition of two 3D points in place.
+   * @param other - The point to add.
+   * @returns - A new Point3D instance with the added coordinates.
+   */
+  public add<T extends Point2D>(other: T) {
+    super.add(other);
+    if (other instanceof Point3D) {
+      this._z += other.z;
+    }
+    return this;
+  }
+
+  public sub<T extends Point2D>(other: T) {
+    super.sub(other);
+    if (other instanceof Point3D) {
+      this._z -= other.z;
+    }
+    return this;
   }
 }

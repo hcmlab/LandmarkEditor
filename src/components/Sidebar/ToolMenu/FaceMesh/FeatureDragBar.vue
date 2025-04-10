@@ -42,13 +42,13 @@ watch(featureDragValue, (newValue) => {
     <div class="d-flex align-items-center justify-content-around">
       <div class="me-2">{{ Math.round(featureDragValue) }}</div>
       <input
+        id="feature-drag"
+        v-model="featureDragValue"
         type="range"
         class="form-range"
         min="0"
         max="5"
-        v-model="featureDragValue"
         step="1"
-        id="feature-drag"
       />
     </div>
   </div>
