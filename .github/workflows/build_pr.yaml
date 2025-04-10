@@ -17,11 +17,19 @@ jobs:
           node-version: 20
           cache: 'npm'
       - run: npm ci
+      - name: Cache Playwright Browsers
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
       - name: Unit Tests
         run: npm run test:unit
       - name: E2E Tests
         run: |
-          npx playwright install --with-deps
           npm run test:e2e
       - name: linter
         run: npm run test:lint
