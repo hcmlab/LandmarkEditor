@@ -19,7 +19,7 @@ import AboutSection from '@/components/Navbar/AboutSection.vue';
           />
         </div>
         <div>
-          <h5 id="title" class="m-0">Face Mesh Editor</h5>
+          <h5 id="title" class="m-0">Landmark Editor</h5>
         </div>
       </div>
     </BNavbarBrand>

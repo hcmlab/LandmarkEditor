@@ -37,7 +37,7 @@ test.describe('check title and main page layout', () => {
     });
 
     await test.step('check navbar brand', async () => {
-      await expect(page.locator('#title')).toHaveText('Face Mesh Editor');
+      await expect(page.locator('#title')).toHaveText('Landmark Editor');
       const icon = page.locator('#app-icon');
       await expect(icon).toBeVisible();
     });
