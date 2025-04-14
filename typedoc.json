@@ -1,0 +1,18 @@
+{
+  "entryPoints": [
+    "src"
+  ],
+  "out": "doc/typedoc",
+  "tsconfig": "tsconfig.app.json",
+  "includeVersion": true,
+  "excludeExternals": true,
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "excludeInternal": true,
+  "hideGenerator": true,
+  "readme": "README.md",
+  "exclude": [
+    "**/*.spec.ts",
+    "**/__tests__/**"
+  ]
+}
