@@ -28,19 +28,6 @@ export class Graph<P extends Point2D> {
   }
 
   /**
-   * marks all listed points as deleted from graph
-   * @param pointIds points to delete
-   * @private
-   */
-  togglePoints(pointIds: number[]): void {
-    this.points.forEach((point) => {
-      if (pointIds.includes(point.id)) {
-        point.deleted = !point.deleted;
-      }
-    });
-  }
-
-  /**
    * Creates a Graph instance from a JSON object. Expects to be verified
    * @param jsonObject - An array of point objects in JSON format.
    * @param newObject - A function to create a new point object. Should call the new constructor and load the id.
@@ -61,6 +48,20 @@ export class Graph<P extends Point2D> {
         return Object.assign(point, dict);
       })
     );
+  }
+
+  /**
+   * marks all listed points as deleted from graph
+   * @param pointIds points to delete
+   * @param deleted if true, the points should be hidden
+   * @private
+   */
+  togglePoints(pointIds: number[], deleted: boolean): void {
+    this.points.forEach((point) => {
+      if (pointIds.includes(point.id)) {
+        point.deleted = deleted;
+      }
+    });
   }
 
   /**

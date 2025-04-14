@@ -1,9 +1,18 @@
-<script setup lang="ts">
+<script lang="ts" setup>
+import { ref, watch } from 'vue';
 import ButtonWithIcon from '@/components/MenuItems/ButtonWithIcon.vue';
 import { useAnnotationToolStore } from '@/stores/annotationToolStore.ts';
 import { allBodyFeatures } from '@/enums/bodyFeature.ts';
 
 const tools = useAnnotationToolStore();
+const deleted_features = ref(tools.selectedHistory?.deletedFeatures);
+
+watch(
+  () => tools.selectedHistory?.deletedFeatures,
+  () => {
+    deleted_features.value = tools.selectedHistory?.deletedFeatures;
+  }
+);
 </script>
 
 <template>
@@ -17,12 +26,8 @@ const tools = useAnnotationToolStore();
   </div>
   <div v-for="feature in allBodyFeatures" :key="feature">
     <button-with-icon
+      :icon="deleted_features?.has(feature) ? 'bi-arrow-counterclockwise' : 'bi-trash'"
       :text="feature"
-      :icon="
-        tools.selectedHistory?.deletedFeatures.has(feature)
-          ? 'bi-arrow-counterclockwise'
-          : 'bi-trash'
-      "
       shortcut=""
       @click="tools.toggleFeature(feature)"
     />

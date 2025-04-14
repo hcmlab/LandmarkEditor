@@ -3,7 +3,7 @@ import {
   HandLandmarker,
   type HandLandmarkerResult
 } from '@mediapipe/tasks-vision';
-import type { ModelApi } from '@/model/modelApi';
+import { ModelApi } from '@/model/modelApi';
 import { Point2D } from '@/graph/point2d';
 import type { ImageFile } from '@/imageFile';
 import { Graph } from '@/graph/graph';
@@ -12,30 +12,18 @@ import { imageFromFile } from '@/util/imageFromFile';
 import { findNeighbourPointIds } from '@/graph/face_landmarks_features';
 import { useHandConfig } from '@/stores/ToolSpecific/handConfig.ts';
 import type { AnnotationData } from '@/graph/serialisedData.ts';
+import { BodyFeature } from '@/enums/bodyFeature.ts';
 
-export class MediapipeHandModel implements ModelApi<Point2D> {
+export class MediapipeHandModel extends ModelApi<Point2D, HandLandmarkerResult> {
   private handLandmarker: HandLandmarker | undefined = undefined;
   private readonly config = useHandConfig();
 
-  get shouldUpload(): boolean {
-    return false;
+  constructor() {
+    super(AnnotationTool.Hand, false, [BodyFeature.Left_Hand, BodyFeature.Right_Hand]);
   }
 
-  private static async processResult(
-    res: HandLandmarkerResult
-  ): Promise<Graph<Point2D> | undefined> {
-    if (res.landmarks.length == 0) return undefined;
-
-    const points = res.landmarks.flat().map((landmark, idx) => {
-      const ids = Array.from(findNeighbourPointIds(idx, HandLandmarker.HAND_CONNECTIONS, 1));
-      return new Point2D(idx, landmark.x, landmark.y, ids);
-    });
-
-    const graph = new Graph(points);
-    if (points) {
-      return graph;
-    }
-    return undefined;
+  get shouldUpload(): boolean {
+    return false;
   }
 
   async detect(imageFile: ImageFile): Promise<Graph<Point2D>[] | undefined> {
@@ -54,7 +42,7 @@ export class MediapipeHandModel implements ModelApi<Point2D> {
           return;
         }
 
-        const graph = await MediapipeHandModel.processResult(res);
+        const graph = await this.processResult(res);
         if (!graph) {
           this.config.processing = false;
           reject(
@@ -74,12 +62,39 @@ export class MediapipeHandModel implements ModelApi<Point2D> {
     return this.initialize();
   }
 
-  tool(): AnnotationTool {
-    return AnnotationTool.Hand;
-  }
-
   async uploadAnnotations(_: AnnotationData): Promise<void | Response> {
     return Promise.resolve();
+  }
+
+  pointIdsFromFeature(feature: BodyFeature): number[] {
+    switch (feature) {
+      case BodyFeature.Left_Eye:
+      case BodyFeature.Left_Eyebrow:
+      case BodyFeature.Right_Eye:
+      case BodyFeature.Right_Eyebrow:
+      case BodyFeature.Nose:
+      case BodyFeature.Mouth:
+        return [];
+      case BodyFeature.Left_Hand:
+        return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
+      case BodyFeature.Right_Hand:
+        return [22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40];
+    }
+  }
+
+  protected processResult(res: HandLandmarkerResult): Graph<Point2D> | undefined {
+    if (res.landmarks.length == 0) return undefined;
+
+    const points = res.landmarks.flat().map((landmark, idx) => {
+      const ids = Array.from(findNeighbourPointIds(idx, HandLandmarker.HAND_CONNECTIONS, 1));
+      return new Point2D(idx, landmark.x, landmark.y, ids);
+    });
+
+    const graph = new Graph(points);
+    if (points) {
+      return graph;
+    }
+    return undefined;
   }
 
   private async initialize(): Promise<void> {

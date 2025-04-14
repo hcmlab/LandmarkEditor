@@ -2,8 +2,8 @@
 import * as bootstrap from 'bootstrap'; // import statically - don't grab it from a cdn
 import $ from 'jquery';
 import { ref } from 'vue';
-import { WebServiceModel } from '@/model/webservice';
-import { MediapipeModel } from '@/model/mediapipe';
+import { WebServiceFaceModel } from '@/model/webserviceFace.ts';
+import { MediapipeFaceModel } from '@/model/mediapipeFace.ts';
 import { urlError } from '@/enums/urlError';
 import WebserviceSelectModal from '@/components/Modals/WebserviceSelectModal.vue';
 import { useAnnotationToolStore } from '@/stores/annotationToolStore';
@@ -29,7 +29,7 @@ function setModel(model: ModelType): boolean {
   switch (model) {
     case ModelType.mediapipeFaceMesh: {
       btnMediapipe.checked = true;
-      tools.models.set(AnnotationTool.FaceMesh, new MediapipeModel());
+      tools.models.set(AnnotationTool.FaceMesh, new MediapipeFaceModel());
       showModal.value = false;
       break;
     }
@@ -38,10 +38,10 @@ function setModel(model: ModelType): boolean {
       const inputBox = $('#modelurl');
       const url = String(inputBox.val()).trim();
 
-      WebServiceModel.verifyUrl(url).then((error) => {
+      WebServiceFaceModel.verifyUrl(url).then((error) => {
         const errorText = $('#urlErrorText');
         if (error === null) {
-          tools.models.set(AnnotationTool.FaceMesh, new WebServiceModel(url));
+          tools.models.set(AnnotationTool.FaceMesh, new WebServiceFaceModel(url));
           showModal.value = false;
           errorText.hide();
           const saveElement = $('#saveNotification')[0];
@@ -53,7 +53,7 @@ function setModel(model: ModelType): boolean {
 
           const histories = tools.allHistories;
           if (!histories) {
-            console.log('Failed to retrieve history on API change.');
+            console.error('Failed to retrieve history on API change.');
             return;
           }
 
@@ -63,7 +63,7 @@ function setModel(model: ModelType): boolean {
           }
 
           histories.forEach((history) => {
-            model.detect(history.file).then((graphs) => {
+            model.detect(history.file, tools.selectedHistory.deletedFeatures).then((graphs) => {
               if (graphs === null) {
                 return;
               }

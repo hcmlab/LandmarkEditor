@@ -1,17 +1,9 @@
 import { FaceLandmarker } from '@mediapipe/tasks-vision';
 import {
-  FACE_FEATURE_LEFT_EYE,
-  FACE_FEATURE_LEFT_EYEBROW,
-  FACE_FEATURE_LIPS,
-  FACE_FEATURE_NOSE,
-  FACE_FEATURE_RIGHT_EYE,
-  FACE_FEATURE_RIGHT_EYEBROW,
   FACE_LANDMARKS_NOSE,
   UPDATED_LEFT_IRIS,
   UPDATED_RIGHT_IRIS
 } from '@/graph/face_landmarks_features';
-import { useFaceMeshConfig } from '@/stores/ToolSpecific/faceMeshConfig';
-import { Editor } from '@/Editors/Editor';
 import { AnnotationTool } from '@/enums/annotationTool';
 import { PointMoveEditor } from '@/Editors/PointMoveEditor';
 
@@ -25,18 +17,13 @@ import {
   COLOR_EDGES_RIGHT_IRIS,
   COLOR_EDGES_TESSELATION
 } from '@/Editors/EditorConstants';
-import { BodyFeature } from '@/enums/bodyFeature';
+import { useFaceMeshConfig } from '@/stores/ToolSpecific/faceMeshConfig.ts';
 
 export class FaceMeshEditor extends PointMoveEditor {
   private readonly editorConfigStore = useFaceMeshConfig();
 
   constructor() {
-    super(AnnotationTool.FaceMesh);
-    this.editorConfigStore.$subscribe(() => {
-      Editor.draw();
-    });
-
-    Editor.add(this);
+    super(AnnotationTool.FaceMesh, useFaceMeshConfig());
   }
 
   draw(): void {
@@ -54,26 +41,5 @@ export class FaceMeshEditor extends PointMoveEditor {
     this.drawFaceTrait(FaceLandmarker.FACE_LANDMARKS_LEFT_EYE, COLOR_EDGES_LEFT_EYE);
     this.drawFaceTrait(UPDATED_LEFT_IRIS, COLOR_EDGES_LEFT_IRIS);
     this.drawFaceTrait(FACE_LANDMARKS_NOSE, COLOR_EDGES_NOSE);
-  }
-
-  protected pointIdsFromFeature(feature: BodyFeature): number[] {
-    switch (feature) {
-      case BodyFeature.Left_Eye:
-        return FACE_FEATURE_LEFT_EYE;
-      case BodyFeature.Left_Eyebrow:
-        return FACE_FEATURE_LEFT_EYEBROW;
-      case BodyFeature.Right_Eye:
-        return FACE_FEATURE_RIGHT_EYE;
-      case BodyFeature.Right_Eyebrow:
-        return FACE_FEATURE_RIGHT_EYEBROW;
-      case BodyFeature.Nose:
-        return FACE_FEATURE_NOSE;
-      case BodyFeature.Mouth:
-        return FACE_FEATURE_LIPS;
-      case BodyFeature.Left_Hand:
-        return [];
-      case BodyFeature.Right_Hand:
-        return [];
-    }
   }
 }

@@ -13,6 +13,8 @@ import { type AnnotationData, type GraphData, type ToolConfig } from '@/graph/se
 import { useFaceMeshConfig } from '@/stores/ToolSpecific/faceMeshConfig';
 import { useHandConfig } from '@/stores/ToolSpecific/handConfig';
 import { usePoseConfig } from '@/stores/ToolSpecific/poseConfig';
+import { allBodyFeatures, type BodyFeature } from '@/enums/bodyFeature.ts';
+import type { Graph } from '@/graph/graph.ts';
 
 const tools = useAnnotationToolStore();
 const faceConfig = useFaceMeshConfig();
@@ -92,28 +94,30 @@ function onFileLoad(reader: FileReader): void {
     if (!history) {
       throw new Error(`Tried to load annotation data for nonexistent file: ${filename}`);
     }
-    const h = FileAnnotationHistory.fromJson(
+    const graphs = FileAnnotationHistory.fromJson(
       rawData,
       history.file,
       (id, neighbors) => new Point3D(id, 0, 0, 0, neighbors)
     );
 
-    if (!h) {
+    if (!graphs) {
       throw new Error(`Failed to parse histories for ${filename}`);
     }
     history.clear();
 
     // Add tools that are in the annotation data but not used already
     // eslint-disable-next-line no-loops/no-loops
-    for (const key of h.keys()) {
+    for (const key of graphs.keys()) {
       if (!tools.tools.has(key)) {
         tools.tools.add(key);
       }
     }
-    history.mergeMultipleTools(h);
+    history.mergeMultipleTools(graphs);
 
     if (rawData.deletedFeatures) {
       history.setDeletedFeatures(rawData.deletedFeatures);
+    } else {
+      history.setDeletedFeatures(evaluateDeletedFeatures(graphs));
     }
   });
   parseToolConfigData(parsedData);
@@ -154,6 +158,34 @@ function parseToolConfigData(parsedData: AnnotationData): void {
   if (toolConfig.poseMinPresenceConf != null)
     poseConfig.setMinPresenceConfidence(toolConfig.poseMinPresenceConf);
   if (toolConfig.poseModelType != null) poseConfig.setModelType(toolConfig.poseModelType);
+}
+
+function evaluateDeletedFeatures(graphs: Map<AnnotationTool, Graph<Point3D>[]>): BodyFeature[] {
+  const deletedFeatures: BodyFeature[] = [];
+
+  allBodyFeatures.forEach((feature) => {
+    tools.getModels.forEach((model) => {
+      const feature_points = model.pointIdsFromFeature(feature);
+      if (!feature_points) {
+        throw new Error(`Failed to retrieve feature points for ${feature}`);
+      }
+      const points = graphs.get(model.tool);
+      if (!points) {
+        throw new Error(`Failed to retrieve points for ${model.tool}`);
+      }
+      // Check only on the latest graph
+      const latestGraph = points[0];
+      const is_deleted = feature_points.every((point_id) => {
+        const point = latestGraph.getById(point_id);
+        return point?.deleted === true;
+      });
+      if (is_deleted) {
+        deletedFeatures.push(feature);
+      }
+    });
+  });
+
+  return deletedFeatures;
 }
 
 function handleLeave(event: BeforeUnloadEvent) {

@@ -16,7 +16,6 @@ const showModelInfoModal = ref(false);
 const modelType = ref<PoseModelType>(props.modelType);
 
 function updateModelType(type: PoseModelType) {
-  console.log(type);
   emit('change', type);
   modelType.value = type;
 }
@@ -52,8 +51,8 @@ const accurarys = {
       :for="'btnPoseModel_' + type"
       class="btn text-center"
     >
-      {{ type }}<br />
-      {{ accurarys[type] }}
+      {{ type }}
+      <small>{{ accurarys[type] }} </small>
       <input
         :id="'btnPoseModel_' + type"
         :key="'pose_model_' + idx"

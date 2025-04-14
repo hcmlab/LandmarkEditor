@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
-import { MediapipeModel } from '../mediapipe';
+import { MediapipeFaceModel } from '../mediapipeFace';
 import { ModelApi } from '../modelApi';
 import { Point2D } from '../../graph/point2d';
 
@@ -20,7 +20,7 @@ describe('MediapipeModel', () => {
   let model: ModelApi<Point2D>;
   beforeEach(() => {
     setActivePinia(createPinia());
-    model = new MediapipeModel();
+    model = new MediapipeFaceModel();
   });
 
   it('should initialize MediapipeModel correctly', async () => {

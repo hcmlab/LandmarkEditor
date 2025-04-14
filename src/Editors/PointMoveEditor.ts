@@ -1,5 +1,6 @@
 import { watch } from 'vue';
 import type { CanvasGradient, CanvasPattern } from 'canvas';
+import type { Store } from 'pinia';
 import { Editor } from '@/Editors/Editor';
 import { Perspective2D } from '@/graph/perspective2d';
 import { Point2D } from '@/graph/point2d';
@@ -24,16 +25,15 @@ export interface PointPairs<T extends Point2D> {
 }
 
 export abstract class PointMoveEditor extends Editor {
-  protected readonly tools = useAnnotationToolStore();
+  protected readonly toolStore = useAnnotationToolStore();
   protected config = usePointMoveConfig();
   private oldDeletedFeatures = new Set<BodyFeature>();
-  private readonly childTool: AnnotationTool;
 
-  protected constructor(childTool: AnnotationTool) {
-    super();
-    this.childTool = childTool;
+  protected constructor(childTool: AnnotationTool, childConfig: Store) {
+    super(childTool);
+    /** Check for updates on the selected history. */
     watch(
-      () => this.tools.histories.selectedHistory?.get(this.childTool),
+      () => this.toolStore.histories.selectedHistory?.get(this.tool),
       () => {
         this.loadLatestAnnotation();
       },
@@ -42,24 +42,30 @@ export abstract class PointMoveEditor extends Editor {
       }
     );
 
+    /** Check for updates on the selected tool(s). */
     watch(
-      () => this.tools.tools,
+      () => this.toolStore.tools,
       () => this.loadLatestAnnotation(),
       {
         deep: true
       }
     );
 
+    /** Check for updates on deleted features. */
     watch(
-      () => this.tools.selectedHistory?.deletedFeatures,
+      () => this.toolStore.selectedHistory?.deletedFeatures,
       (value) => {
-        const changed = allBodyFeatures.filter(
-          (val) =>
-            (value?.has(val) && !this.oldDeletedFeatures.has(val)) ||
-            (!value?.has(val) && this.oldDeletedFeatures.has(val))
+        const added = allBodyFeatures.filter(
+          (feature) => value?.has(feature) && !this.oldDeletedFeatures.has(feature)
         );
-        changed.forEach((val) => {
-          this.toggleFeature(val);
+        const removed = allBodyFeatures.filter(
+          (feature) => !value?.has(feature) && this.oldDeletedFeatures.has(feature)
+        );
+        added.forEach((feature) => {
+          this.toggleFeature(feature, true);
+        });
+        removed.forEach((feature) => {
+          this.toggleFeature(feature, false);
         });
         this.oldDeletedFeatures = new Set<BodyFeature>([...value]);
       },
@@ -67,37 +73,41 @@ export abstract class PointMoveEditor extends Editor {
         deep: true
       }
     );
-  }
 
-  toggleFeature(feature: BodyFeature) {
-    const selectedHistory = this.tools.selectedHistory;
-    if (!selectedHistory) {
-      throw new Error('Failed to get histories on feature deletion.');
-    }
-    const graph = selectedHistory.get(this.tool);
-    if (!graph) return;
-    const points = this.pointIdsFromFeature(feature);
-    if (points.length === 0) return; // nothing to hide
-    graph.togglePoints(points);
-    selectedHistory.add(graph, this.tool);
+    childConfig.$subscribe(() => {
+      Editor.draw();
+    });
   }
 
   private _graph: Graph<Point2D> = new Graph<Point2D>([]);
-
-  get tool(): AnnotationTool {
-    return this.childTool;
-  }
 
   protected get graph(): Graph<Point2D> {
     return this._graph;
   }
 
-  protected set graph(value: Graph<Point2D> | null | undefined) {
+  protected set graph(value: Graph<Point2D> | undefined) {
     if (value) {
       this._graph = value.clone();
     } else {
       this._graph = new Graph<Point2D>([]);
     }
+  }
+
+  toggleFeature(feature: BodyFeature, deleted: boolean): void {
+    const selectedHistory = this.toolStore.selectedHistory;
+    if (!selectedHistory) {
+      throw new Error('Failed to get histories on feature deletion.');
+    }
+    const graph = selectedHistory.get(this.tool);
+    if (!graph) return;
+    const model = this.toolStore.getModel(this.tool);
+    if (!model) {
+      throw new Error('Failed to get model on feature deletion.');
+    }
+    const points = model.pointIdsFromFeature(feature);
+    if (points.length === 0) return; // nothing to hide
+    graph.togglePoints(points, deleted);
+    selectedHistory.add(graph, this.tool);
   }
 
   onMove(relativeMouseX: number, relativeMouseY: number): void {
@@ -163,6 +173,7 @@ export abstract class PointMoveEditor extends Editor {
       // right click
     }
   }
+
   onMouseMove(_: MouseEvent, relativeMouseX: number, relativeMouseY: number): void {
     let pointHover = false;
     const relativeMouse = Perspective2D.unproject(
@@ -200,24 +211,11 @@ export abstract class PointMoveEditor extends Editor {
   }
 
   onPointsEdited() {
-    const selected_history = this.tools.selectedHistory;
+    const selected_history = this.toolStore.selectedHistory;
     if (!selected_history) {
       throw new Error('Could not retrieve selected history');
     }
-    selected_history.add(this.graph, this.childTool);
-  }
-
-  private loadLatestAnnotation() {
-    const selectedHistory = this.tools.selectedHistory;
-    if (!selectedHistory) return; // there is no error here. Just nothing to render.
-    this.graph = null;
-    this.graph = selectedHistory.get(this.childTool)?.clone();
-
-    // If you check the git history for this line you see that there was a check, if the amount of points was 0.
-    // This was wrong, since the empty graph means no features were detected.
-    if (!this.graph) return;
-
-    Editor.draw();
+    selected_history.add(this.graph, this.tool);
   }
 
   protected drawPoint(point: Point2D): void {
@@ -303,26 +301,45 @@ export abstract class PointMoveEditor extends Editor {
     });
   }
 
-  protected getOverwrittenPoints() {
-    let res = [] as number[];
-    const h = this.tools.selectedHistory;
+  protected getOverwrittenPoints(): number[] {
+    const h = this.toolStore.selectedHistory;
     if (!h) {
-      return [] as number[];
+      return [];
     }
 
-    this.tools.tools.forEach((tool) => {
+    let res: number[] = [];
+    const ownModel = this.toolStore.getModel(this.tool);
+    if (!ownModel) {
+      throw new Error('Could not find model when drawing for model!');
+    }
+    this.toolStore.tools.forEach((tool) => {
       if (tool === this.tool) return;
       // Skip tool if the tool has no points
       if (!h.get(tool) || h.get(tool)?.points.length === 0) {
         return;
       }
-      Editor.toolProvidesFeatures(tool).forEach((feature: BodyFeature) => {
-        res = res.concat(this.pointIdsFromFeature(feature));
+      const model = this.toolStore.getModel(tool);
+      if (!model) {
+        throw new Error('Could not find model when drawing for model!');
+      }
+      model.precedenceFeatures.forEach((feature: BodyFeature) => {
+        res = res.concat(ownModel.pointIdsFromFeature(feature));
       });
     });
 
     return res;
   }
 
-  protected abstract pointIdsFromFeature(feature: BodyFeature): number[];
+  private loadLatestAnnotation() {
+    const selectedHistory = this.toolStore.selectedHistory;
+    if (!selectedHistory) return; // there is no error here. Just nothing to render.
+    this.graph = undefined;
+    this.graph = selectedHistory.get(this.tool)?.clone();
+
+    // If you check the git history for this line you see that there was a check, if the amount of points was 0.
+    // This was wrong, since the empty graph means no features were detected.
+    if (!this.graph) return;
+
+    Editor.draw();
+  }
 }

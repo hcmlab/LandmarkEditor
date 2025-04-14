@@ -7,16 +7,13 @@ import { SaveStatus } from '@/enums/saveStatus';
 import { AnnotationTool } from '@/enums/annotationTool';
 import { useAnnotationToolStore } from '@/stores/annotationToolStore';
 import type { ModelApi } from '@/model/modelApi.ts';
+import type { PublicInterface } from '@/util/publicInterface';
 
 export class FileAnnotationHistoryContainer<T extends Point2D> {
+  public toolForOverwriteModal: AnnotationTool | null = null;
   private readonly _histories: FileAnnotationHistory<T>[] = [];
   private _selectedHistoryIndex: number = 0;
   private readonly tools = useAnnotationToolStore();
-  public toolForOverwriteModal: AnnotationTool | null = null;
-
-  public histories(tool: AnnotationTool): (Graph<T> | null)[] {
-    return this._histories.map((h) => h.get(tool));
-  }
 
   public get allHistories(): FileAnnotationHistory<T>[] {
     return this._histories;
@@ -43,13 +40,17 @@ export class FileAnnotationHistoryContainer<T extends Point2D> {
     ) as FileAnnotationHistory<Point2D>[];
   }
 
+  public histories(tool: AnnotationTool): (Graph<T> | undefined)[] {
+    return this._histories.map((h) => h.get(tool));
+  }
+
   /**
    * Creates a new history for the provided file and runs the detection for provided APIs.
    * @param file - The new file
    * @param apis - Currently selected APIs
    * @throws {Error} - If the file is not a valid image or if the detection fails
    */
-  public async add(file: File, apis: ModelApi<T>[]): Promise<void> {
+  public async add(file: File, apis: ModelApi<T, never>[]): Promise<void> {
     const imageFile = await ImageFile.create(file);
     if (!imageFile) {
       throw new Error('Failed to parse image data.');
@@ -57,12 +58,12 @@ export class FileAnnotationHistoryContainer<T extends Point2D> {
     const history = new FileAnnotationHistory<T>(imageFile);
     await Promise.all(
       apis.map(async (api) => {
-        if (!api.tool()) return;
+        if (!api.tool) return;
         await api
-          .detect(imageFile)
+          .detect(imageFile, this.selectedHistory?.deletedFeatures)
           .then((result) => {
             if (result) {
-              history.merge(result, api.tool());
+              history.merge(result, api.tool);
             }
           })
           .catch((err) => {
@@ -145,6 +146,30 @@ export class FileAnnotationHistoryContainer<T extends Point2D> {
     this.toolForOverwriteModal = tool;
   }
 
+  async runDetectionForTool(
+    selectedHistory: PublicInterface<FileAnnotationHistory<T>>,
+    tool: AnnotationTool
+  ) {
+    const model = this.tools.getModel(tool);
+    if (!model) return;
+
+    try {
+      const graphs = await model.detect(
+        selectedHistory.file,
+        this.selectedHistory?.deletedFeatures
+      );
+      selectedHistory.clearForTool(tool);
+      selectedHistory.merge(graphs as Graph<T>[], tool);
+    } catch (error) {
+      /* The catch is triggered when
+       * - detection fails (nothing is detected) [This is not an error]
+       * - for whatever reason the history cant be merged
+       */
+      console.error(error);
+      selectedHistory.clearForTool(tool);
+    }
+  }
+
   /**
    * Runs the detection for the selected history for all selected tools.
    * @param selectedHistory
@@ -156,26 +181,5 @@ export class FileAnnotationHistoryContainer<T extends Point2D> {
         await this.runDetectionForTool(selectedHistory, tool);
       })
     );
-  }
-
-  private async runDetectionForTool(
-    selectedHistory: FileAnnotationHistory<T>,
-    tool: AnnotationTool
-  ) {
-    const model = this.tools.getModel(tool);
-    if (!model) return;
-
-    try {
-      const graphs = await model.detect(selectedHistory.file);
-      selectedHistory.clearForTool(tool);
-      selectedHistory.merge(graphs as Graph<T>[], tool);
-    } catch (error) {
-      /* The catch is triggered when
-       * - detection fails (nothing is detected) [This is not an error]
-       * - for whatever reason the history cant be merged
-       */
-      console.error(error);
-      selectedHistory.clearForTool(tool);
-    }
   }
 }

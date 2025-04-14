@@ -7,7 +7,7 @@ import { FaceMeshEditor } from '@/Editors/FaceMeshEditor';
 import { BackgroundDrawer } from '@/Editors/BackgroundDrawer';
 import { PoseEditor } from '@/Editors/PoseEditor';
 import { HandEditor } from '@/Editors/HandEditor';
-import UserOverwriteModal from '@/components/Main/UserOverwriteModal.vue';
+import UserOverwriteModal from '@/components/Modals/UserOverwriteModal.vue';
 
 const tools = useAnnotationToolStore();
 
@@ -44,6 +44,14 @@ watch(
     await Promise.all(
       Array.from(added).map(async (tool) => {
         editors.value.push(fromTool(tool));
+
+        const histories = tools.histories.allHistories;
+        histories.forEach((h) => {
+          if (!h.isEmpty(tool)) {
+            return;
+          }
+          tools.histories.runDetectionForTool(h, tool);
+        });
       })
     );
     editors.value.forEach((editor) => {
@@ -93,8 +101,10 @@ function handleMouseMove(event: MouseEvent): void {
   if (!canvas.value) return;
   Editor.prevMouseX = Editor.mouseX;
   Editor.prevMouseY = Editor.mouseY;
-  const canvasPosLeft = canvas.value.offsetLeft;
-  const canvasPosTop = canvas.value.offsetTop;
+  const canvasPos = $('#canvas').offset();
+  if (!canvasPos) return;
+  const canvasPosLeft = canvasPos.left;
+  const canvasPosTop = canvasPos.top;
   Editor.mouseX = event.clientX - canvasPosLeft;
   Editor.mouseY = event.clientY - canvasPosTop;
   const relativeMouseX = (Editor.mouseX - Editor.offsetX) / Editor.zoomScale;
@@ -149,12 +159,12 @@ const onResize = () => {
 </script>
 
 <template>
-  <div id="canvas-div" class="d-flex flex-grow-1 flex-shrink-1 border border-5">
-    <UserOverwriteModal class="top-0 start-0 w-100 h-100" />
+  <div id="canvas-div" class="d-flex flex-grow-1 flex-shrink-1 border border-5 position-relative">
+    <UserOverwriteModal class="position-absolute top-0 start-0 w-100 h-100" style="z-index: 10" />
     <canvas
       id="canvas"
       ref="canvas"
-      class=""
+      class="position-relative"
       @mousedown="handleMouseDown"
       @mousemove="handleMouseMove"
       @mouseout="handleMouseUp"

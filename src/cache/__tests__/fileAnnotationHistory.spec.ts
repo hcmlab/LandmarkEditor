@@ -82,7 +82,7 @@ describe('FileAnnotationHistory', () => {
 
     history.add(generateMockedGraph(), AnnotationTool.Pose);
     history.clear();
-    expect(history.get(AnnotationTool.Pose)).toBe(null);
+    expect(history.get(AnnotationTool.Pose)).toBe(undefined);
   });
 
   it('marks as sent properly', () => {

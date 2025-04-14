@@ -140,7 +140,7 @@ export class FileAnnotationHistory<T extends Point2D> {
    * @param tool - The tool to get the history for.
    * @returns - The current annotation graph or null if empty.
    */
-  get(tool: AnnotationTool): null | Graph<T> {
+  get(tool: AnnotationTool): undefined | Graph<T> {
     const h = this._history.get(tool);
     if (!h) {
       throw new Error('Failed to retrieve history.');
@@ -149,7 +149,7 @@ export class FileAnnotationHistory<T extends Point2D> {
     if (!this.isEmpty(tool)) {
       return h[this.currentHistoryIndex(tool)];
     }
-    return null;
+    return undefined;
   }
 
   /**
