@@ -1,7 +1,12 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import { ref, watch } from 'vue';
 
-const props = defineProps<{ topText: string; icon: string; modelValue: number }>();
+const props = defineProps<{
+  topText: string;
+  icon: string;
+  modelValue: number;
+  disabled: boolean;
+}>();
 const emit = defineEmits(['update:modelValue']);
 
 const sliderValue = ref(props.modelValue);
@@ -26,7 +31,7 @@ watch(
     <div class="d-flex flex-column w-100 align-items-center">
       <label :for="barId" class="form-label">
         <b>
-          <i class="bi" :class="icon"></i>
+          <i :class="icon" class="bi"></i>
           {{ props.topText }}
         </b>
       </label>
@@ -36,10 +41,11 @@ watch(
       <input
         :id="barId"
         v-model.number="sliderValue"
-        type="range"
+        :disabled="props.disabled"
         class="form-range"
-        min="0"
         max="100"
+        min="0"
+        type="range"
       />
     </div>
   </div>

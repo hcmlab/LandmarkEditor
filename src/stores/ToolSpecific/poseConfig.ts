@@ -41,8 +41,8 @@ export const usePoseConfig = defineStore('poseConfig', {
       return config;
     },
     getModelType: (state) => state.modelType,
-    minDetectionConfidence: (state) => state.modelOptions.minPoseDetectionConfidence,
-    minPresenceConfidence: (state) => state.modelOptions.minPosePresenceConfidence
+    minDetectionConfidence: (state) => state.modelOptions.minPoseDetectionConfidence ?? 0.5,
+    minPresenceConfidence: (state) => state.modelOptions.minPosePresenceConfidence ?? 0.5
   },
   actions: {
     setProcessing(processing: boolean) {

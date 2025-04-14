@@ -24,8 +24,8 @@ export const useHandConfig = defineStore('handConfig', {
       if (!config.baseOptions) throw new Error('Model config is not properly set');
       return config;
     },
-    minDetectionConfidence: (state) => state.modelOptions.minHandDetectionConfidence,
-    minPresenceConfidence: (state) => state.modelOptions.minHandPresenceConfidence
+    minDetectionConfidence: (state) => state.modelOptions.minHandDetectionConfidence ?? 0.5,
+    minPresenceConfidence: (state) => state.modelOptions.minHandPresenceConfidence ?? 0.5
   },
   actions: {
     setProcessing(processing: boolean) {

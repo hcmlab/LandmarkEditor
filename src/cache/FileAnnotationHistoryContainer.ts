@@ -8,9 +8,10 @@ import { AnnotationTool } from '@/enums/annotationTool';
 import { useAnnotationToolStore } from '@/stores/annotationToolStore';
 import type { ModelApi } from '@/model/modelApi.ts';
 import type { PublicInterface } from '@/util/publicInterface';
+import type { ConfidenceOverwriteModalConfig } from '@/enums/confidenceOverwriteModalConfig.ts';
 
 export class FileAnnotationHistoryContainer<T extends Point2D> {
-  public toolForOverwriteModal: AnnotationTool | null = null;
+  public toolOverwriteModalConfig: ConfidenceOverwriteModalConfig | undefined;
   private readonly _histories: FileAnnotationHistory<T>[] = [];
   private _selectedHistoryIndex: number = 0;
   private readonly tools = useAnnotationToolStore();
@@ -136,14 +137,24 @@ export class FileAnnotationHistoryContainer<T extends Point2D> {
    * in this case that the unsaved changes should be discarded.
    *
    * @param tool - The tool, where settings were changed. Used to know which history to reset.
+   * @param oldDetectionConfidence - old detection confidence to be restored if the user chooses to cancel
+   * @param oldPresenceConfidence - old presence confidence to be restored if the user chooses to cancel
    */
-  public async requestDetection(tool: AnnotationTool) {
+  public async requestDetection(
+    tool: AnnotationTool,
+    oldDetectionConfidence: number,
+    oldPresenceConfidence: number
+  ) {
     const withUpdates = this._histories.filter((h) => h.status === SaveStatus.edited);
     if (withUpdates.length === 0) {
       this._histories.forEach((h) => this.runDetection(h));
       return;
     }
-    this.toolForOverwriteModal = tool;
+    this.toolOverwriteModalConfig = {
+      tool: tool,
+      detectionConfidence: oldDetectionConfidence,
+      presenceConfidence: oldPresenceConfidence
+    };
   }
 
   async runDetectionForTool(
