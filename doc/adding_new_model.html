@@ -45,7 +45,7 @@
   }
 
   async function renderMarkdown() {
-    const url = 'https://raw.githubusercontent.com/hcmlab/FaceMeshEditor/refs/heads/other-tools/AddNewModels.md';
+    const url = 'https://raw.githubusercontent.com/hcmlab/FaceMeshEditor/refs/heads/main/other-tools/AddNewModels.md';
     let markdown = await loadFileFromUrl(url);
     if (markdown) {
       const converter = new showdown.Converter();
