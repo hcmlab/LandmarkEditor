@@ -12,10 +12,10 @@ ______________________________________________________________________
 
 [**Demo**](https://hcmlab.github.io/FaceMeshEditor/)
 
+Check the [Documentation](https://hcmlab.github.io/FaceMeshEditor/docs/)
+
 ![Screenshot of the Demo as a Preview](static/images/PreviewAnimation.gif)
 </div>
-
-Check the [Documentation](https://hcmlab.github.io/FaceMeshEditor/docs/)
 
 ## Features
 

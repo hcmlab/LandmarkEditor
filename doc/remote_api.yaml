@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: FaceMeshEditor remote api
+  title: Landmark Editor remote api
   description: Describes the API a server should supply to work with this application
   version: 1.0.0
 components:
@@ -73,7 +73,7 @@ components:
     Coordinate:
       type: number
       format: float
-      description: the relative position on one axis. The api might accept points outside the image, to support points 
+      description: the relative position on one axis. The api might accept points outside the image, to support points
         outside the image area.
       minimum: 0
       maximum: 1.0
