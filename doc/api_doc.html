@@ -7,10 +7,10 @@
 
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.18.3/swagger-ui.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.19.0/swagger-ui.css" rel="stylesheet">
 
   <script src="https://cdn.jsdelivr.net/npm/showdown@2.1.0/dist/showdown.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.18.3/swagger-ui-bundle.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.19.0/swagger-ui-bundle.js"></script>
 </head>
 <body
   class="d-flex flex-column d-flex align-items-center justify-content-center flex-column overflow-y-auto min-vh-100">
@@ -20,11 +20,11 @@
     <i class="bi bi-arrow-left fs-1"></i>
   </a>
   <div class="d-flex justify-content-between align-items-center container">
-    <img alt="Face Mesh Logo"
+    <img id="icon-image" alt="Face Mesh Logo"
          src="https://hcmlab.github.io/FaceMeshEditor/assets/FaceMesh-ByCQ6hfM.png" style="width: 10rem">
     <div class="p-4">
-      <h1 class="text-dark">Landmark Editor Documentation</h1>
-      <h2 class="text-dark">Remote API documentation</h2>
+      <h1>Landmark Editor Documentation</h1>
+      <h2>Remote API documentation</h2>
     </div>
   </div>
 </div>
@@ -38,9 +38,51 @@
     SwaggerUIBundle({
       url: './remote_api.yaml',
       dom_id: '#output',
-      layout: 'BaseLayout'
+      layout: 'BaseLayout',
+      theme: 'dark'
     });
   };
-</script>
 
+  const htmlElement = document.documentElement;
+  const anchorButtons = document.querySelectorAll('a');
+  const icon = document.querySelector('#icon-image');
+
+  // Function to apply the theme based on system settings
+  function applySystemTheme() {
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    htmlElement.setAttribute('data-bs-theme', prefersDark ? 'dark' : 'light');
+    anchorButtons.forEach(anchor => {
+      anchor.classList.remove(prefersDark ? 'btn-outline-dark' : 'btn-outline-light');
+      anchor.classList.add(prefersDark ? 'btn-outline-light' : 'btn-outline-dark');
+    });
+
+    if (prefersDark) {
+      icon.classList.add('inverted');
+    } else {
+      icon.classList.remove('inverted');
+    }
+  }
+
+  // Initial theme application
+  applySystemTheme();
+
+  // Listen for changes in system settings
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applySystemTheme);
+</script>
+<style>
+    .inverted {
+        filter: invert(1);
+        transition: filter 0.5s ease;
+    }
+
+    @media (prefers-color-scheme: dark) {
+        .swagger-ui {
+            filter: invert(88%) hue-rotate(180deg);
+        }
+
+        .swagger-ui .microlight {
+            filter: invert(100%) hue-rotate(180deg);
+        }
+    }
+</style>
 </html>

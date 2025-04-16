@@ -10,9 +10,10 @@
   class="d-flex flex-column d-flex align-items-center justify-content-center flex-column overflow-y-auto min-vh-100">
 
 <div class="d-flex justify-content-center align-items-center mt-5 container">
-  <img alt="Face Mesh Logo"
+  <img id="icon-image"
+       alt="Face Mesh Logo"
        src="https://hcmlab.github.io/FaceMeshEditor/assets/FaceMesh-ByCQ6hfM.png" style="width: 10rem">
-  <h1 class="text-dark p-4">Landmark Editor Documentation</h1>
+  <h1 class="p-4">Landmark Editor Documentation</h1>
 </div>
 <div
   class="d-flex flex-column justify-content-center align-items-center container text-center flex-grow-1">
@@ -44,7 +45,7 @@
       </a>
     </div>
     <div class="col d-flex justify-content-center">
-      <a class="btn btn-outline-dark d-flex align-items-center justify-content-center"
+      <a class="btn btn-outline-light d-flex align-items-center justify-content-center"
          href="handbook.html" style="height: 20rem; width: 20rem;" type="button">
         <h1>
           Manual
@@ -54,4 +55,39 @@
   </div>
 </div>
 </body>
+
+<script>
+  const htmlElement = document.documentElement;
+  const anchorButtons = document.querySelectorAll('a');
+  const icon = document.querySelector('#icon-image');
+
+  // Function to apply the theme based on system settings
+  function applySystemTheme() {
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    htmlElement.setAttribute('data-bs-theme', prefersDark ? 'dark' : 'light');
+    anchorButtons.forEach(anchor => {
+      anchor.classList.remove(prefersDark ? 'btn-outline-dark' : 'btn-outline-light');
+      anchor.classList.add(prefersDark ? 'btn-outline-light' : 'btn-outline-dark');
+    });
+
+    if (prefersDark) {
+      icon.classList.add('inverted');
+    } else {
+      icon.classList.remove('inverted');
+    }
+  }
+
+  // Initial theme application
+  applySystemTheme();
+
+  // Listen for changes in system settings
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applySystemTheme);
+</script>
+<style>
+    .inverted {
+        filter: invert(1);
+        transition: filter 0.5s ease;
+    }
+</style>
+
 </html>
