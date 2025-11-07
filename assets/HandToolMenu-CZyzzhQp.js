@@ -1,0 +1,1 @@
+import{d as e,V as t,a,o as s,e as o,L as c}from"./index-DRfJpMGD.js";import{_ as r}from"./ToolMenuPreamble.vue_vue_type_script_setup_true_lang-J8khxapo.js";const m=e({__name:"HandToolMenu",setup(d){const n=t();return(f,_)=>(s(),a(r,{config:o(n),tool:o(c).Hand,"not-detected-text":"No hand(s) detected"},null,8,["config","tool"]))}});export{m as default};
