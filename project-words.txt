@@ -19,3 +19,7 @@ webservice
 jssha
 Checkmark
 thumbmarkjs
+pinia
+shortkey
+Blendshapes
+serialised

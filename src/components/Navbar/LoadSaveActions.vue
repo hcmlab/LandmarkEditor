@@ -1,0 +1,283 @@
+<script lang="ts" setup>
+import { onBeforeUnmount, onMounted, ref } from 'vue';
+import { BDropdownItem, BNavItemDropdown } from 'bootstrap-vue-next';
+import { Point3D } from '@/graph/point3d';
+import { Point2D } from '@/graph/point2d';
+import ButtonWithIcon from '@/components/MenuItems/ButtonWithIcon.vue';
+import getFormattedTimestamp from '@/util/formattedTimestamp';
+import { FileAnnotationHistory } from '@/cache/fileAnnotationHistory';
+import { useAnnotationToolStore } from '@/stores/annotationToolStore';
+import { AnnotationTool } from '@/enums/annotationTool';
+import { SaveStatus } from '@/enums/saveStatus';
+import { type AnnotationData, type GraphData, type ToolConfig } from '@/graph/serialisedData';
+import { useFaceMeshConfig } from '@/stores/ToolSpecific/faceMeshConfig';
+import { useHandConfig } from '@/stores/ToolSpecific/handConfig';
+import { usePoseConfig } from '@/stores/ToolSpecific/poseConfig';
+import { allBodyFeatures, type BodyFeature } from '@/enums/bodyFeature.ts';
+import type { Graph } from '@/graph/graph.ts';
+
+const tools = useAnnotationToolStore();
+const faceConfig = useFaceMeshConfig();
+const handConfig = useHandConfig();
+const poseConfig = usePoseConfig();
+
+const imageInput = ref();
+const annotationInput = ref();
+
+function openImage(): void {
+  imageInput.value.click();
+}
+
+function openAnnotation() {
+  annotationInput.value.click();
+}
+
+function saveAnnotation(download: boolean): void {
+  const h = tools.histories;
+  if (!h) {
+    throw new Error('Failed to retrieve histories for saving');
+  }
+  if (h.empty) {
+    return;
+  }
+
+  const result: AnnotationData = h.collectAnnotations();
+  if (Object.keys(result).length <= 0) {
+    return;
+  }
+
+  const model = tools.getModel(AnnotationTool.FaceMesh);
+  if (!model) {
+    throw new Error('Failed to retrieve model during annotation upload.');
+  }
+
+  model.uploadAnnotations(result);
+
+  if (!download) return;
+
+  result.config = getToolConfigData();
+  const dataStr: string =
+    'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(result));
+  const a: HTMLAnchorElement = document.createElement('a');
+  a.id = 'download-all';
+  a.href = dataStr;
+  a.download = 'face_mesh_annotations_' + getFormattedTimestamp() + '.json';
+  a.click();
+}
+
+function onFileLoad(reader: FileReader): void {
+  const parsedData: AnnotationData = JSON.parse(reader.result as string);
+  Object.keys(parsedData).forEach((filename) => {
+    // Skip the config key
+    if (filename === 'config') {
+      return;
+    }
+    // cancel for additional keys that don't describe graphs
+    if (typeof parsedData[filename] === 'string') {
+      return;
+    }
+    const rawData = parsedData[filename] as GraphData;
+    if (!rawData) {
+      throw new Error(`Failed to retrieve annotation data for ${filename}`);
+    }
+    const sha = rawData.sha256;
+    if (!sha) {
+      throw new Error(
+        `Tried to load annotation data for matching filename ${filename} but not matching hash`
+      );
+    }
+    const histories = tools.histories;
+    if (!histories) {
+      throw new Error('Failed to retrieve histories for loading annotation data');
+    }
+    const history = histories.find(filename, sha);
+    if (!history) {
+      throw new Error(`Tried to load annotation data for nonexistent file: ${filename}`);
+    }
+    const graphs = FileAnnotationHistory.fromJson(
+      rawData,
+      history.file,
+      (id, neighbors) => new Point3D(id, 0, 0, 0, neighbors)
+    );
+
+    if (!graphs) {
+      throw new Error(`Failed to parse histories for ${filename}`);
+    }
+    history.clear();
+
+    // Add tools that are in the annotation data but not used already
+    // eslint-disable-next-line no-loops/no-loops
+    for (const key of graphs.keys()) {
+      if (!tools.tools.has(key)) {
+        tools.tools.add(key);
+      }
+    }
+    history.mergeMultipleTools(graphs);
+
+    if (rawData.deletedFeatures) {
+      history.setDeletedFeatures(rawData.deletedFeatures);
+    } else {
+      history.setDeletedFeatures(evaluateDeletedFeatures(graphs));
+    }
+  });
+  parseToolConfigData(parsedData);
+}
+
+function getToolConfigData() {
+  return {
+    faceMinDetectionConf: faceConfig.minDetectionConfidence,
+    faceMinPresenceConf: faceConfig.minPresenceConfidence,
+    faceTesselation: faceConfig.showTesselation,
+    handMinDetectionConf: handConfig.minDetectionConfidence,
+    handMinPresenceConf: handConfig.minPresenceConfidence,
+    poseMinDetectionConf: poseConfig.minDetectionConfidence,
+    poseMinPresenceConf: poseConfig.minPresenceConfidence,
+    poseModelType: poseConfig.modelType
+  } as ToolConfig;
+}
+
+function parseToolConfigData(parsedData: AnnotationData): void {
+  const toolConfig = parsedData.config as ToolConfig;
+  if (!toolConfig) {
+    return; // No tool config data to parse
+  }
+
+  if (toolConfig.faceMinDetectionConf != null)
+    faceConfig.setMinDetectionConfidence(toolConfig.faceMinDetectionConf);
+  if (toolConfig.faceMinPresenceConf != null)
+    faceConfig.setMinPresenceConfidence(toolConfig.faceMinPresenceConf);
+  if (toolConfig.faceTesselation != null) faceConfig.setShowTesselation(toolConfig.faceTesselation);
+
+  if (toolConfig.handMinDetectionConf != null)
+    handConfig.setMinDetectionConfidence(toolConfig.handMinDetectionConf);
+  if (toolConfig.handMinPresenceConf != null)
+    handConfig.setMinPresenceConfidence(toolConfig.handMinPresenceConf);
+
+  if (toolConfig.poseMinDetectionConf != null)
+    poseConfig.setMinDetectionConfidence(toolConfig.poseMinDetectionConf);
+  if (toolConfig.poseMinPresenceConf != null)
+    poseConfig.setMinPresenceConfidence(toolConfig.poseMinPresenceConf);
+  if (toolConfig.poseModelType != null) poseConfig.setModelType(toolConfig.poseModelType);
+}
+
+function evaluateDeletedFeatures(graphs: Map<AnnotationTool, Graph<Point3D>[]>): BodyFeature[] {
+  const deletedFeatures: BodyFeature[] = [];
+
+  allBodyFeatures.forEach((feature) => {
+    tools.getModels.forEach((model) => {
+      const feature_points = model.pointIdsFromFeature(feature);
+      if (!feature_points) {
+        throw new Error(`Failed to retrieve feature points for ${feature}`);
+      }
+      const points = graphs.get(model.tool);
+      if (!points) {
+        throw new Error(`Failed to retrieve points for ${model.tool}`);
+      }
+      // Check only on the latest graph
+      const latestGraph = points[0];
+      const is_deleted = feature_points.every((point_id) => {
+        const point = latestGraph.getById(point_id);
+        return point?.deleted === true;
+      });
+      if (is_deleted) {
+        deletedFeatures.push(feature);
+      }
+    });
+  });
+
+  return deletedFeatures;
+}
+
+function handleLeave(event: BeforeUnloadEvent) {
+  const histories = tools.allHistories;
+
+  if (!Array.isArray(histories)) {
+    throw new Error('Failed to retrieve histories for saving during shutdown');
+  }
+
+  histories.forEach((h: FileAnnotationHistory<Point2D>) => {
+    tools.tools.forEach((tool) => {
+      const model = tools.getModel(tool);
+      if (!model) {
+        throw new Error('Failed to retrieve model for saving during shutdown');
+      }
+      if (h.status === SaveStatus.edited && model.shouldUpload) {
+        saveAnnotation(false);
+      }
+    });
+  });
+
+  if (tools.histories.unsaved.length > 0) {
+    event.preventDefault();
+    // This is marked as deprecated. If you check the tooltip in webstorm, it says that this can be done to support legacy browsers.
+    event.returnValue = '';
+  }
+}
+
+onMounted(() => {
+  imageInput.value.onchange = () => {
+    if (imageInput.value.files) {
+      const files: File[] = Array.from(imageInput.value.files);
+      files.forEach((f) => tools.histories.add(f, tools.getModels));
+    }
+  };
+
+  annotationInput.value.onchange = () => {
+    if (!annotationInput.value.files) return;
+    if (annotationInput.value.files.length <= 0) return;
+    const annotationFile: File = annotationInput.value.files[0];
+    const reader: FileReader = new FileReader();
+    reader.onload = (_) => onFileLoad(reader);
+    reader.readAsText(annotationFile);
+  };
+
+  window.addEventListener('beforeunload', handleLeave);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('beforeunload', handleLeave);
+});
+</script>
+
+<template>
+  <input id="image-input" ref="imageInput" accept="image/*" hidden multiple type="file" />
+  <input
+    id="annotation-input"
+    ref="annotationInput"
+    accept=".json,application/json"
+    hidden
+    type="file"
+  />
+  <BNavItemDropdown
+    id="file-dropdown"
+    auto-close="outside"
+    class="pt-1"
+    text="File"
+    variant="light"
+  >
+    <BDropdownItem>
+      <button-with-icon
+        icon="bi-folder2-open"
+        shortcut="Control+O"
+        text="Open Images"
+        @click="openImage"
+      />
+    </BDropdownItem>
+    <BDropdownItem>
+      <button-with-icon
+        icon="bi-folder2-open"
+        shortcut="Control+A"
+        text="Open Annotations"
+        @click="openAnnotation"
+      />
+    </BDropdownItem>
+    <BDropdownItem>
+      <button-with-icon
+        icon="bi-download"
+        shortcut="Control+S"
+        text="Download all"
+        @click="saveAnnotation(true)"
+      />
+    </BDropdownItem>
+  </BNavItemDropdown>
+</template>

@@ -1,10 +1,15 @@
+import { FaceLandmarker } from '@mediapipe/tasks-vision';
 import { Point2D } from './point2d';
+import { findNeighbourPointIds } from '@/graph/face_landmarks_features';
+import type { PointData } from '@/graph/serialisedData.ts';
 
 /**
  * Represents a graph of points in a 2D space.
  * @template P - Type of the points (must extend Point2D).
  */
 export class Graph<P extends Point2D> {
+  static readonly MAX_ID = 478;
+
   private readonly _points: P[];
 
   /**
@@ -17,30 +22,46 @@ export class Graph<P extends Point2D> {
 
   /**
    * Gets the array of points in the graph.
-   * @returns {P[]} - An array of points.
    */
   get points(): P[] {
     return this._points;
   }
 
   /**
-   * Creates a Graph instance from a JSON object.
-   * @param {P[]} jsonObject - An array of point objects in JSON format.
-   * @param {() => P} newObject - A function to create a new point object.
-   * @returns {Graph<P>} - A new Graph instance.
+   * Creates a Graph instance from a JSON object. Expects to be verified
+   * @param jsonObject - An array of point objects in JSON format.
+   * @param newObject - A function to create a new point object. Should call the new constructor and load the id.
+   * @returns - A new Graph instance.
    */
   static fromJson<P extends Point2D>(
-    jsonObject: P[],
-    newObject: (id) => P,
+    jsonObject: PointData[],
+    newObject: (id: number, neighbors: number[]) => P
   ): Graph<P> {
     return new Graph<P>(
       jsonObject.map((dict) => {
-        const point = newObject(dict['id']);
+        const point = newObject(
+          dict.id,
+          findNeighbourPointIds(dict.id, FaceLandmarker.FACE_LANDMARKS_TESSELATION, 1)
+        );
         // @ts-expect-error: built in method uses readonly
         delete dict['id'];
         return Object.assign(point, dict);
-      }),
+      })
     );
+  }
+
+  /**
+   * marks all listed points as deleted from graph
+   * @param pointIds points to delete
+   * @param deleted if true, the points should be hidden
+   * @private
+   */
+  togglePoints(pointIds: number[], deleted: boolean): void {
+    this.points.forEach((point) => {
+      if (pointIds.includes(point.id)) {
+        point.deleted = deleted;
+      }
+    });
   }
 
   /**
@@ -48,8 +69,8 @@ export class Graph<P extends Point2D> {
    * @param {number} id - The ID of the point.
    * @returns {P} - The point with the specified ID.
    */
-  getById(id: number): P {
-    return this.points.find((p) => p.id === id);
+  getById(id: number): P | undefined {
+    return this.points.find((p: P) => p.id === id);
   }
 
   /**
@@ -57,7 +78,7 @@ export class Graph<P extends Point2D> {
    * @param {P} point - The point for which neighbors are requested.
    * @returns {P[]} - An array of neighboring points.
    */
-  getNeighbourPointsOf(point: P): P[] {
+  getNeighbourPointsOf(point: P): (P | undefined)[] {
     return point.getNeighbourIds().map((id) => this.getById(id));
   }
 
@@ -82,7 +103,7 @@ export class Graph<P extends Point2D> {
    * Converts the graph to an array of dictionaries.
    * @returns - An array of dictionaries representing the points.
    */
-  toDictArray(): { deleted: boolean; x: number; y: number; id: number }[] {
+  toDictArray(): PointData[] {
     return this.points.map((point) => point.toDict());
   }
 }

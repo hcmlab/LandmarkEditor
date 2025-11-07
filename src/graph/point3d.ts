@@ -1,5 +1,7 @@
 import { Point2D } from './point2d';
 
+import type { PointData } from '@/graph/serialisedData.ts';
+
 /**
  * Represents a 3D point with an ID, coordinates, and neighbor information.
  * Extends the base class Point2D.
@@ -13,13 +15,7 @@ export class Point3D extends Point2D {
    * @param {number} z - The z-coordinate of the point (additional dimension).
    * @param {number[]} neighbourIds - An array of neighbor IDs.
    */
-  constructor(
-    id: number,
-    x: number,
-    y: number,
-    z: number,
-    neighbourIds: number[],
-  ) {
+  constructor(id: number, x: number, y: number, z: number, neighbourIds: number[]) {
     super(id, x, y, neighbourIds);
     this._z = z;
   }
@@ -40,7 +36,7 @@ export class Point3D extends Point2D {
 
   /**
    * Returns a string representation of the 3D point.
-   * @returns {string} - A formatted string with point details.
+   * @returns - A formatted string with point details.
    */
   toString() {
     return `Point3D(id=${this.id}, x=${this.x}, y=${this.y}, z=${this.z})`;
@@ -48,16 +44,10 @@ export class Point3D extends Point2D {
 
   /**
    * Creates a shallow copy of the 3D point.
-   * @returns {Point3D} - A new Point3D instance with cloned properties.
+   * @returns - A new Point3D instance with cloned properties.
    */
   clone() {
-    const copy = new Point3D(
-      this.id,
-      this.x,
-      this.y,
-      this.z,
-      this.getNeighbourIds(),
-    );
+    const copy = new Point3D(this.id, this.x, this.y, this.z, this.getNeighbourIds());
     copy.hovered = this.hovered;
     copy.deleted = this.deleted;
     copy.selected = this.selected;
@@ -66,18 +56,15 @@ export class Point3D extends Point2D {
 
   /**
    * Converts the point to a dictionary object.
-   * @returns {object} - A dictionary containing point properties.
+   * @returns - A dictionary containing point properties.
    */
-  toDict() {
+  toDict(): PointData {
     return {
       id: this.id,
       x: this.x,
       y: this.y,
       z: this.z,
-      // hovered: this.hovered,
-      deleted: this.deleted,
-      // selected: this.selected,
-      // neighbourIds: this.neighbourIds
+      deleted: this.deleted
     };
   }
 }

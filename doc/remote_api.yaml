@@ -97,6 +97,7 @@ paths:
                 - file
       parameters:
         - name: user_id
+          required: true
           in: path
           schema:
             type: string
@@ -111,7 +112,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/MeshCollection'
         400:
-          description: The sent image data are not readable  | No file part in the request | No selected file | Allowed file types are .png, .jpg, .jpeg
+          description: The sent image data are not readable | No file part in the request | No selected file | Allowed file types are .png, .jpg, .jpeg
           content:
             application/json:
               schema:

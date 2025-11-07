@@ -5,29 +5,15 @@ import { Point2D } from './point2d';
  */
 export class Perspective2D {
   /**
-   * Converts a normalized point (in the range [0, 1]) to display coordinates (pixel values).
-   * @param {HTMLImageElement} image - The image on which the point is defined.
-   * @param {Point2D} point - The normalized point.
-   * @returns {Point2D} - The corresponding point in display coordinates.
-   */
-  static normalizedToDisplay(image: HTMLImageElement, point: Point2D): Point2D {
-    const copy = point.clone();
-    copy.x = point.x * image.width;
-    copy.y = point.y * image.height;
-    return copy;
-  }
-
-  /**
    * Projects a point from normalized coordinates to display coordinates.
    * @param {HTMLImageElement} image - The image on which the point is defined.
    * @param {Point2D} point - The normalized point.
    * @returns {Point2D} - The projected point in display coordinates.
    */
   static project(image: HTMLImageElement, point: Point2D): Point2D {
-    const displayedPoint = Perspective2D.normalizedToDisplay(image, point);
     const copy = point.clone();
-    copy.x = displayedPoint.x;
-    copy.y = displayedPoint.y;
+    copy.x = point.x * image.width;
+    copy.y = point.y * image.height;
     return copy;
   }
 
@@ -38,16 +24,12 @@ export class Perspective2D {
    * @param {Point2D} pointTo - The ending point.
    * @returns {number} - The distance between the two points.
    */
-  static distanceTo(
-    image: HTMLImageElement,
-    pointFrom: Point2D,
-    pointTo: Point2D,
-  ): number {
+  static distanceTo(image: HTMLImageElement, pointFrom: Point2D, pointTo: Point2D): number {
     const projectPointFrom = Perspective2D.project(image, pointFrom);
     const projectPointTo = Perspective2D.project(image, pointTo);
     return Math.sqrt(
       Math.pow(projectPointFrom.x - projectPointTo.x, 2) +
-        Math.pow(projectPointFrom.y - projectPointTo.y, 2),
+        Math.pow(projectPointFrom.y - projectPointTo.y, 2)
     );
   }
 
@@ -63,22 +45,9 @@ export class Perspective2D {
     image: HTMLImageElement,
     point: Point2D,
     pointCheck: Point2D,
-    delta: number,
+    delta: number
   ): boolean {
     return this.distanceTo(image, point, pointCheck) <= delta;
-  }
-
-  /**
-   * Converts a point from display coordinates to normalized coordinates.
-   * @param {HTMLImageElement} image - The image on which the point is defined.
-   * @param {Point2D} point - The point in display coordinates.
-   * @returns {Point2D} - The corresponding point in normalized coordinates.
-   */
-  static displayToNormalized(image: HTMLImageElement, point: Point2D): Point2D {
-    const copy = point.clone();
-    copy.x = point.x / image.width;
-    copy.y = point.y / image.height;
-    return copy;
   }
 
   /**
@@ -88,10 +57,9 @@ export class Perspective2D {
    * @returns {Point2D} - The corresponding point in normalized coordinates.
    */
   static unproject(image: HTMLImageElement, point: Point2D): Point2D {
-    const normalizedPoint = Perspective2D.displayToNormalized(image, point);
     const copy = point.clone();
-    copy.x = normalizedPoint.x;
-    copy.y = normalizedPoint.y;
+    copy.x = point.x / image.width;
+    copy.y = point.y / image.height;
     return copy;
   }
 }

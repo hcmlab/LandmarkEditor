@@ -144,7 +144,7 @@ export class Point2D {
       x: this.x,
       y: this.y,
       // hovered: this.hovered,
-      deleted: this.deleted,
+      deleted: this.deleted
       // selected: this.selected,
       // neighbourIds: this.neighbourIds
     };

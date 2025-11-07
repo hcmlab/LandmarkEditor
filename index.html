@@ -1,199 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Face Mesh Editor</title>
-    <link rel="icon" type="image/x-icon" href="/static/images/favicon.ico">
+  <meta charset="UTF-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>Landmark Editor</title>
+  <link href="/static/images/favicon.ico" rel="icon" type="image/x-icon">
 
-    <!-- Stylesheets -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="/static/css/boostrap.scss">
-    <link rel="stylesheet" href="/static/css/standard.css">
-    <!-- Scripts -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+  <!-- Stylesheets -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <!-- Scripts -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
 </head>
 <body>
 
-<div class="d-flex flex-row vh-100 w-100 overflow-hidden">
-    <!-- The sidebar -->
-    <div class="w-20 h-100 overflow-y-scroll p-3 rounded-end shadow bg-white">
-        <table class="text-center">
-            <tr>
-                <td>
-                    <img src="/static/images/FaceMesh.png"
-                         class="rounded-circle border border-dark border-2"
-                         style="width: 4vw; height: 4vw;" alt="Icon">
-                </td>
-                <td>
-                    <h2>Face Mesh Editor</h2>
-                </td>
-            </tr>
-        </table>
-        <!-- File Options-->
-        <h5 class="mt-4">File</h5>
-        <a id="openFile" class="nav-link btn btn-light" href="#" aria-keyshortcuts="Control+O"><i
-          class="bi bi-folder2-open"></i> Open Images</a>
-        <a id="openAnno" class="nav-link btn btn-light" href="#" aria-keyshortcuts="Control+A"><i
-          class="bi bi-folder2-open"></i> Open Annotations</a>
-        <a id="saveAnno" class="nav-link btn btn-light" href="#" aria-keyshortcuts="Control+S"><i
-          class="bi bi-download"></i> Download all </a>
-        <a id="sendAnno" class="nav-link btn btn-light" href="#" aria-keyshortcuts="Control+Shift+S">
-            <i class="bi bi-floppy"></i>Save</a>
-        <!-- Edit Options-->
-        <h5 class="mt-4">Edit</h5>
-        <a id="undo" class="nav-link btn btn-light" href="#" aria-keyshortcuts="Control+Z"><i
-          class="bi bi-arrow-counterclockwise"></i> Undo</a>
-        <a id="redo" class="nav-link btn btn-light" href="#" aria-keyshortcuts="Control+Y"><i
-          class="bi bi-arrow-clockwise"></i> Redo</a>
-        <hr>
-        <a id="reset" class="nav-link btn btn-light" href="#" aria-keyshortcuts="Control+R"><i class="bi bi-x-square"></i>
-            Reset</a>
-        <hr>
-        <div class="form" style="padding-top: .2vw; padding-bottom: .2vw;">
-            <label for="feature_drag" class="form-label" aria-keyshortcuts="Shift+Wheel"><i
-              class="bi bi-bounding-box-circles"></i> Drag Depth:
-                <output id="num">0</output>
-            </label>
-            <input type="range" class="form-range" min="0" max="5" value="0" step="1" id="feature_drag"
-                   style="padding-left: .2vw; padding-right: .2vw;">
-        </div>
-        <span class="nav-link" style="padding: .2vw;"><i class="bi bi-cpu"></i> Model</span>
-        <div class="btn-group" role="group" style="padding: .2vw; width: 100%;">
-            <input type="radio" class="btn-check" name="btnradio" id="btnModelMediapipe" autocomplete="off" checked>
-            <label class="btn btn-outline-secondary" for="btnModelMediapipe">Mediapipe<br><small>Offline</small></label>
-            <input type="radio" class="btn-check" name="btnradio" id="btnModelCustom" autocomplete="off"
-                   data-bs-toggle="modal" data-bs-target="#modalSettingsModel">
-            <label class="btn btn-outline-secondary" for="btnModelCustom">Webservice<br><small>Online</small></label>
-        </div>
-        <!-- View Options-->
-        <h5 class="mt-4">View</h5>
-        <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" role="switch" id="view_tesselation">
-            <label class="form-check-label" for="view_tesselation" style="text-align: start;">Tesselation</label>
-        </div>
-        <!-- Feature Options-->
-        <h5 class="mt-4">Features</h5>
-        <a id="feat_le" class="nav-link btn btn-light" href="#" aria-keyshortcuts="" style="padding: .2vw;"><i
-          class="bi bi-trash"></i> Left
-            Eye</a>
-        <a id="feat_leb" class="nav-link btn btn-light" href="#" aria-keyshortcuts="" style="padding: .2vw;"><i
-          class="bi bi-trash"></i> Left
-            Eyebrow</a>
-        <a id="feat_re" class="nav-link btn btn-light" href="#" aria-keyshortcuts="" style="padding: .2vw;"><i
-          class="bi bi-trash"></i> Right
-            Eye</a>
-        <a id="feat_reb" class="nav-link btn btn-light" href="#" aria-keyshortcuts="" style="padding: .2vw;"><i
-          class="bi bi-trash"></i> Right
-            Eyebrow</a>
-        <a id="feat_n" class="nav-link btn btn-light" href="#" aria-keyshortcuts="" style="padding: .2vw;"><i
-          class="bi bi-trash"></i> Nose</a>
-        <a id="feat_m" class="nav-link btn btn-light" href="#" aria-keyshortcuts="" style="padding: .2vw;"><i
-          class="bi bi-trash"></i> Mouth</a>
-        <!-- About -->
-        <h5 class="mt-4">About</h5>
-        <a class="nav-link btn btn-light text-start" href="https://github.com/hcmlab/FaceMeshEditor" target="_blank"
-           style="padding: .2vw;"><i class="bi bi-github"></i> GitHub</a>
-        <a class="nav-link btn btn-light text-start" href="https://github.com/hcmlab/FaceMeshEditor/issues/new"
-           target="_blank" style="padding: .2vw;"><i class="bi bi-bug"></i> Report Issue</a>
-        <a class="nav-link btn btn-light text-start" href="https://github.com/hcmlab/FaceMeshEditor/issues" target="_blank"
-           style="padding: .2vw;"><i class="bi bi-question-circle"></i> Question</a>
-        <a class="nav-link btn btn-light text-start" href="#" data-bs-toggle="modal" data-bs-target="#modalInfo"
-           style="padding: .2vw;"><i class="bi bi-info-circle"></i> Info</a>
-    </div>
-    <!-- The central drawing -->
-    <div class="w-70 h-100 flex-grow-1" id="canvas-div">
-        <canvas id="canvas" class="w-100 h-100"></canvas>
-    </div>
-    <!-- The picture selector -->
-    <div class="w-10 h-100 rounded-start-1 shadow bg-white text-center">
-        <!-- Image Selection -->
-        <h6 class="my-2">Images <small>(
-            <output id="num_images">0</output>
-            )</small></h6>
-        <div id="thumbnailGallery" class="h-100 w-100 overflow-y-auto p-1 d-flex flex-column align-items-center"></div>
-    </div>
-</div>
-
-<div id="modalInfo" class="modal fade" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Info</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body text-center">
-                &copy; 2024<br>Chair of Human-Centered Artificial Intelligence<br>University of Augsburg<br>Germany
-            </div>
-        </div>
-    </div>
-</div>
-
-<div id="modalSettingsModel" class="modal fade" tabindex="-1" aria-labelledby="modalSettingsModelLabel"
-     aria-hidden="true" data-bs-keyboard="false">
-    <div class="modal-dialog modal-dialog-centered">
-        <form>
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalSettingsModelLabel">Webservice</h5>
-                    <button id="btnCloseModal" type="button" class="btn-close" data-bs-dismiss="modal"
-                            aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p>
-                        The webservice address will be used to detect a face mesh on selected images.
-                        Therefore, the images must be transferred to the webservice for processing.
-                        The open format allows it to create individual webservices by everyone and can be easily
-                        swapped.
-                    </p>
-                    <div class="alert alert-warning d-flex align-items-center" role="alert">
-                        <svg xmlns="http://www.w3.org/2000/svg"
-                             class="bi bi-exclamation-triangle-fill flex-shrink-0 me-2"
-                             viewBox="0 0 16 16" role="img" aria-label="Warning:" style="width: 2vw;">
-                            <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
-                        </svg>
-                        <div>
-                            Be aware, that the webservice owner might store your images and annotations!
-                        </div>
-                    </div>
-                    <hr>
-                    <h6>API</h6>
-                    <p>
-                        The webservice API must provide the following addresses:
-                        <br><code>/detect</code><br>
-                        This call is used to detect a single face on a provided image file inside a POST request.
-                        <br><code>/annotations</code><br>
-                        This call is used to sync the annotations inside a POST request when the user triggers the
-                        download.
-                    </p>
-                    <hr>
-                    <h6>URL</h6>
-                    <p>Insert the webservice URL in the text field below and submit with hitting the Save button.</p>
-                    <div id="urlErrorText" class="text-danger" hidden>
-                    </div>
-                    <label for="modelurl" class="form-label" hidden></label>
-                    <input type="url" class="form-control" id="modelurl"
-                           placeholder="https://example.com/model/api" required>
-                </div>
-                <div class="modal-footer">
-                    <button id="btnCancelModal" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel
-                    </button>
-                    <button id="btnSaveCustomModel" type="submit" class="btn btn-primary">Save</button>
-                </div>
-            </div>
-        </form>
-    </div>
-</div>
+<div id="app"></div>
 
 <!-- Notification popups -->
 <div class="toast-container position-fixed bottom-0 end-0 p-3">
-    <div id="saveNotification" class="toast">
-        <div class="toast-header" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="greenSquare"></div>
-            <div id="saveNotificationText" class="p-1"><!-- filled by javascript --></div>
-        </div>
+  <div id="saveNotification" class="toast">
+    <div aria-atomic="true" aria-live="assertive" class="toast-header" role="alert">
+      <div class="greenSquare"></div>
+      <div id="saveNotificationText" class="p-1"><!-- filled by javascript --></div>
     </div>
+  </div>
 </div>
-<script src="/src/app.ts" type="module"></script>
+<script src="/src/main.ts" type="module"></script>
 </body>
 </html>
