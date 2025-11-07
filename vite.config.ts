@@ -14,7 +14,7 @@ export default defineConfig({
     }),
     vueDevTools()
   ],
-  base: '/FaceMeshEditor/',
+  base: '/LandmarkEditor/',
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))

@@ -10,7 +10,7 @@ const showInfo = ref(false);
       <a
         id="button-github"
         class="nav-link btn btn-light text-start"
-        href="https://github.com/hcmlab/FaceMeshEditor"
+        href="https://github.com/hcmlab/LandmarkEditor"
         target="_blank"
         ><i class="bi bi-github me-1"></i>GitHub</a
       >
@@ -20,7 +20,7 @@ const showInfo = ref(false);
       <a
         id="button-report-issue"
         class="nav-link btn btn-light text-start"
-        href="https://github.com/hcmlab/FaceMeshEditor/issues/new"
+        href="https://github.com/hcmlab/LandmarkEditor/issues/new"
         target="_blank"
         ><i class="bi bi-bug me-1"></i>Report Issue</a
       >
@@ -29,7 +29,7 @@ const showInfo = ref(false);
       <a
         id="button-question"
         class="nav-link btn btn-light text-start"
-        href="https://github.com/hcmlab/FaceMeshEditor/issues"
+        href="https://github.com/hcmlab/LandmarkEditor/issues"
         target="_blank"
         ><i class="bi bi-question-circle me-1"></i>Question</a
       >
