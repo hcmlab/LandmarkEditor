@@ -4,13 +4,13 @@ ______________________________________________________________________
 
 # Landmark Editor
 
-#### An Editor to manually adjust automatic Face Mesh Detections
+#### An Editor to manually adjust automatic Landmark Detections
 
 ______________________________________________________________________
 
-![Build](https://github.com/hcmlab/FaceMeshEditor/actions/workflows/build.yaml/badge.svg)
+![Build](https://github.com/hcmlab/LandmarkEditor/actions/workflows/build.yaml/badge.svg)
 
-[**Demo**](https://hcmlab.github.io/FaceMeshEditor/)
+[**Demo**](https://hcmlab.github.io/LandmarkEditor/)
 
 ![Screenshot of the Demo as a Preview](static/images/PreviewAnimation.gif)
 </div>

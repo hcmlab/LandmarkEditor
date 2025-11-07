@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: FaceMeshEditor remote api
+  title: LandmarkEditor remote api
   description: Describes the API a server should supply to work with this application
   version: 1.0.0
 components:
