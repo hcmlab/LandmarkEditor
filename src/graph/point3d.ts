@@ -1,5 +1,6 @@
 import { Point2D } from './point2d';
-import type { PointData } from '@/cache/fileAnnotationHistory';
+
+import type { PointData } from '@/graph/serialisedData.ts';
 
 /**
  * Represents a 3D point with an ID, coordinates, and neighbor information.

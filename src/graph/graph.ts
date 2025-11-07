@@ -1,9 +1,7 @@
 import { FaceLandmarker } from '@mediapipe/tasks-vision';
 import { Point2D } from './point2d';
-import type { ModelApi } from '@/model/modelApi';
-import type { ImageFile } from '@/imageFile';
-import type { PointData } from '@/cache/fileAnnotationHistory';
 import { findNeighbourPointIds } from '@/graph/face_landmarks_features';
+import type { PointData } from '@/graph/serialisedData.ts';
 
 /**
  * Represents a graph of points in a 2D space.
@@ -30,19 +28,6 @@ export class Graph<P extends Point2D> {
   }
 
   /**
-   * marks all listed points as deleted from graph
-   * @param pointIds points to delete
-   * @private
-   */
-  deletePoints(pointIds: number[]): void {
-    this.points.forEach((point) => {
-      if (pointIds.includes(point.id)) {
-        point.deleted = true;
-      }
-    });
-  }
-
-  /**
    * Creates a Graph instance from a JSON object. Expects to be verified
    * @param jsonObject - An array of point objects in JSON format.
    * @param newObject - A function to create a new point object. Should call the new constructor and load the id.
@@ -63,6 +48,20 @@ export class Graph<P extends Point2D> {
         return Object.assign(point, dict);
       })
     );
+  }
+
+  /**
+   * marks all listed points as deleted from graph
+   * @param pointIds points to delete
+   * @param deleted if true, the points should be hidden
+   * @private
+   */
+  togglePoints(pointIds: number[], deleted: boolean): void {
+    this.points.forEach((point) => {
+      if (pointIds.includes(point.id)) {
+        point.deleted = deleted;
+      }
+    });
   }
 
   /**
@@ -106,9 +105,5 @@ export class Graph<P extends Point2D> {
    */
   toDictArray(): PointData[] {
     return this.points.map((point) => point.toDict());
-  }
-
-  static detect<P extends Point2D>(api: ModelApi<P>, file: ImageFile) {
-    return api.detect(file);
   }
 }

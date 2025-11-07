@@ -1,42 +1,37 @@
 <script setup lang="ts">
-import { useAnnotationHistoryStore } from '@/stores/annotationHistoryStore';
-import { useModelStore } from '@/stores/modelStore';
 import ButtonWithIcon from '@/components/MenuItems/ButtonWithIcon.vue';
+import { useAnnotationToolStore } from '@/stores/annotationToolStore';
 
-const annotationHistoryStore = useAnnotationHistoryStore();
-const modelStore = useModelStore();
+const tools = useAnnotationToolStore();
 
-function undo(): boolean {
-  annotationHistoryStore.selectedHistory?.previous();
-  return false;
-}
-
-function redo(): boolean {
-  annotationHistoryStore.selectedHistory?.next();
-  return false;
-}
-
-function reset(): boolean {
-  annotationHistoryStore.selectedHistory?.clear();
-  runDetection();
-  return false;
-}
-
-function runDetection() {
-  const history = annotationHistoryStore.selectedHistory;
-  if (!history) return;
-  modelStore.model?.detect(history.file).then((graphs) => {
-    if (graphs === null) {
-      return;
-    }
-    history.clear();
-    history.append(graphs);
+function undo() {
+  const selectedHistory = tools.selectedHistory;
+  if (!selectedHistory) {
+    throw new Error('Could not retrieve selected history');
+  }
+  tools.tools.forEach((tool) => {
+    selectedHistory.previous(tool);
   });
+  return false;
+}
+
+function redo() {
+  const selectedHistory = tools.selectedHistory;
+  if (!selectedHistory) {
+    throw new Error('Could not retrieve selected history');
+  }
+  tools.tools.forEach((tool) => {
+    selectedHistory.next(tool);
+  });
+}
+
+function reset() {
+  tools.resetCurrentHistory();
 }
 </script>
 
 <template>
-  <BNavItemDropdown text="Edit" class="pt-1" variant="light" id="edit-dropdown">
+  <BNavItemDropdown id="edit-dropdown" text="Edit" class="pt-1" variant="light">
     <BDropdownItem>
       <button-with-icon
         text="Undo"
@@ -53,5 +48,3 @@ function runDetection() {
     </BDropdownItem>
   </BNavItemDropdown>
 </template>
-
-<style scoped></style>

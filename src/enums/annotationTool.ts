@@ -1,6 +1,8 @@
 export enum AnnotationTool {
   BackgroundDrawer = 'BackgroundDrawer',
-  FaceMesh = 'Face Mesh'
+  FaceMesh = 'Face Mesh',
+  Hand = 'Hand',
+  Pose = 'Pose'
 }
 
 export const allAnnotationTools: AnnotationTool[] = Object.values(

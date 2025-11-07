@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted } from 'vue';
-import { useFaceMeshConfig } from '@/stores/ToolSpecific/faceMeshConfig';
+import { usePointMoveConfig } from '@/stores/ToolSpecific/pointMoveConfig';
 
-const editorConfigStore = useFaceMeshConfig();
+const commonConfig = usePointMoveConfig();
 
 const featureDragValue = ref(0);
 
@@ -25,7 +25,7 @@ function addFeatureDrag(value: number): void {
 }
 
 watch(featureDragValue, (newValue) => {
-  editorConfigStore.dragDepth = newValue;
+  commonConfig.dragDepth = newValue;
 });
 </script>
 
@@ -42,13 +42,13 @@ watch(featureDragValue, (newValue) => {
     <div class="d-flex align-items-center justify-content-around">
       <div class="me-2">{{ Math.round(featureDragValue) }}</div>
       <input
+        id="feature-drag"
+        v-model="featureDragValue"
         type="range"
         class="form-range"
         min="0"
         max="5"
-        v-model="featureDragValue"
         step="1"
-        id="feature-drag"
       />
     </div>
   </div>

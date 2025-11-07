@@ -1,17 +1,16 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import * as bootstrap from 'bootstrap'; // import statically - don't grab it from a cdn
 import $ from 'jquery';
 import { ref } from 'vue';
-import { ModelType } from '@/enums/modelType';
-import { WebServiceModel } from '@/model/webservice';
-import { MediapipeModel } from '@/model/mediapipe';
-import { useModelStore } from '@/stores/modelStore';
+import { WebServiceFaceModel } from '@/model/webserviceFace.ts';
+import { MediapipeFaceModel } from '@/model/mediapipeFace.ts';
 import { urlError } from '@/enums/urlError';
 import WebserviceSelectModal from '@/components/Modals/WebserviceSelectModal.vue';
-import { useAnnotationHistoryStore } from '@/stores/annotationHistoryStore';
+import { useAnnotationToolStore } from '@/stores/annotationToolStore';
+import { AnnotationTool } from '@/enums/annotationTool';
+import { ModelType } from '@/enums/modelType.ts';
 
-const modelStore = useModelStore();
-const annotationHistoryStore = useAnnotationHistoryStore();
+const tools = useAnnotationToolStore();
 const showModal = ref(false);
 
 function openModal(): void {
@@ -28,9 +27,9 @@ function setModel(model: ModelType): boolean {
   const btnMediapipe = document.getElementById('btnModelMediapipe') as HTMLInputElement;
   const btnCustom = document.getElementById('btnModelCustom') as HTMLInputElement;
   switch (model) {
-    case ModelType.mediapipe: {
+    case ModelType.mediapipeFaceMesh: {
       btnMediapipe.checked = true;
-      modelStore.model = new MediapipeModel();
+      tools.models.set(AnnotationTool.FaceMesh, new MediapipeFaceModel());
       showModal.value = false;
       break;
     }
@@ -39,10 +38,10 @@ function setModel(model: ModelType): boolean {
       const inputBox = $('#modelurl');
       const url = String(inputBox.val()).trim();
 
-      WebServiceModel.verifyUrl(url).then((error) => {
+      WebServiceFaceModel.verifyUrl(url).then((error) => {
         const errorText = $('#urlErrorText');
         if (error === null) {
-          modelStore.model = new WebServiceModel(url);
+          tools.models.set(AnnotationTool.FaceMesh, new WebServiceFaceModel(url));
           showModal.value = false;
           errorText.hide();
           const saveElement = $('#saveNotification')[0];
@@ -51,13 +50,25 @@ function setModel(model: ModelType): boolean {
           localStorage.setItem('apiUrl', url);
           const notificationText = $('#saveNotificationText');
           notificationText.text('Webservice url saved!');
-          annotationHistoryStore.histories.forEach((history) => {
-            modelStore.model?.detect(history.file).then((graphs) => {
+
+          const histories = tools.allHistories;
+          if (!histories) {
+            console.error('Failed to retrieve history on API change.');
+            return;
+          }
+
+          const model = tools.getModel(AnnotationTool.FaceMesh);
+          if (!model) {
+            throw new Error('Failed to retrieve model on API change.');
+          }
+
+          histories.forEach((history) => {
+            model.detect(history.file, tools.selectedHistory.deletedFeatures).then((graphs) => {
               if (graphs === null) {
                 return;
               }
               history.clear();
-              history.append(graphs);
+              history.merge(graphs, AnnotationTool.FaceMesh);
             });
           });
           setTimeout(() => {
@@ -88,8 +99,7 @@ function setModel(model: ModelType): boolean {
       break;
     }
     default:
-      console.error('No model "' + model + '" found to change to!');
-      break;
+      throw new Error(`No model "${model}" found to change to!`);
   }
   return false;
 }
@@ -98,41 +108,39 @@ function setModel(model: ModelType): boolean {
 <template>
   <div>
     <div class="d-flex flex-column w-100 align-items-center">
-      <div>
-        <b>
-          <i class="bi bi-cpu me-1"></i>
-          Model
-        </b>
-      </div>
+      <b>
+        <i class="bi bi-cpu me-1"></i>
+        Model
+      </b>
     </div>
 
-    <fieldset class="btn-group" role="group" style="padding: 0.2vw; width: 100%">
+    <fieldset aria-label="Face mesh model selection" class="btn-group w-100 p-1">
       <input
-        type="radio"
-        class="btn-check"
-        name="btnradio"
         id="btnModelMediapipe"
         autocomplete="off"
-        @change="setModel(ModelType.mediapipe)"
         checked
-      />
-      <label class="btn btn-outline-secondary" for="btnModelMediapipe"
-        >Mediapipe<br /><small>Offline</small></label
-      >
-      <input
-        type="radio"
         class="btn-check"
         name="btnradio"
+        type="radio"
+        @change="setModel(ModelType.mediapipeFaceMesh)"
+      />
+      <label class="btn btn-outline-secondary" for="btnModelMediapipe">
+        Mediapipe<br /><small>Offline</small>
+      </label>
+
+      <input
         id="btnModelCustom"
         autocomplete="off"
+        class="btn-check"
+        name="btnradio"
+        type="radio"
         @change="openModal"
       />
-      <label class="btn btn-outline-secondary" for="btnModelCustom"
-        >Webservice<br /><small>Online</small></label
-      >
+      <label class="btn btn-outline-secondary" for="btnModelCustom">
+        Webservice<br /><small>Online</small>
+      </label>
     </fieldset>
-    <div class="mb-2" />
-  </div>
 
-  <WebserviceSelectModal @changeModel="(model) => setModel(model)" v-model="showModal" />
+    <WebserviceSelectModal v-model="showModal" @change-model="(model) => setModel(model)" />
+  </div>
 </template>

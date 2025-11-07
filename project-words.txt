@@ -21,3 +21,5 @@ Checkmark
 thumbmarkjs
 pinia
 shortkey
+Blendshapes
+serialised

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { BModal } from 'bootstrap-vue-next';
-import { ModelType } from '@/enums/modelType';
+import { ModelType } from '@/enums/modelType.ts';
 
 // Props and Emits
 const props = defineProps<{ modelValue: boolean }>();
@@ -65,9 +65,9 @@ watch(isModalVisible, (newValue) => {
     <div id="urlErrorText" class="text-danger" hidden></div>
     <label for="modelurl" class="form-label" hidden></label>
     <input
+      id="modelurl"
       type="url"
       class="form-control"
-      id="modelurl"
       placeholder="https://example.com/model/api"
       required
     />
@@ -77,7 +77,7 @@ watch(isModalVisible, (newValue) => {
         type="button"
         class="btn btn-secondary"
         data-bs-dismiss="modal"
-        @click="emits('changeModel', ModelType.mediapipe)"
+        @click="emits('changeModel', ModelType.mediapipeFaceMesh)"
       >
         Cancel
       </button>

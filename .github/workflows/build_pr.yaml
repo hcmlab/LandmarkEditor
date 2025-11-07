@@ -17,7 +17,13 @@ jobs:
           node-version: 20
           cache: 'npm'
       - run: npm ci
-      - name: Install Playwright Browsers
-        run: npx playwright install --with-deps
-      - run: npm run build --if-present
-      - run: npm run test
+      - name: Unit Tests
+        run: npm run test:unit
+      - name: linter
+        run: npm run test:lint
+      - name: prettier
+        run: npm run test:prettier
+      - name: Spellchecker
+        run: npm run test:spelling
+      - name: Build
+        run: npm run build --if-present

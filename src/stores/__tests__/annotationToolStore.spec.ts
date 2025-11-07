@@ -8,7 +8,7 @@ describe('useAnnotationToolStore', () => {
     setActivePinia(createPinia());
   });
 
-  it('initializes with FaceMesh Tool', () => {
+  it('initializes with FaceMeshToolMenu Tool', () => {
     const store = useAnnotationToolStore();
     expect(store.tools).toEqual(new Set([AnnotationTool.FaceMesh]));
   });

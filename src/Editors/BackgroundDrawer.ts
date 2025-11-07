@@ -7,7 +7,7 @@ import { AnnotationTool } from '@/enums/annotationTool';
 
 export class BackgroundDrawer extends Editor {
   constructor() {
-    super();
+    super(AnnotationTool.BackgroundDrawer);
 
     Editor.add(this);
   }
@@ -34,8 +34,4 @@ export class BackgroundDrawer extends Editor {
   onPan(_: number, __: number): void {}
 
   onPointsEdited(): void {}
-
-  get tool(): AnnotationTool {
-    return AnnotationTool.BackgroundDrawer;
-  }
 }

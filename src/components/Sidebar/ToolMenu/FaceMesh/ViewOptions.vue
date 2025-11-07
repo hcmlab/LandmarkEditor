@@ -31,11 +31,11 @@ onMounted(() => {
   </div>
   <b-form-group>
     <b-form-checkbox
+      v-model="isTesselationChecked"
       switch
       view-tesselation
-      v-model="isTesselationChecked"
-      @change="handleTesselationChange"
       aria-checked="mixed"
+      @change="handleTesselationChange"
     >
       Tesselation
     </b-form-checkbox>

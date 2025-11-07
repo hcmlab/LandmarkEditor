@@ -1,17 +1,19 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import { onMounted, onUnmounted, ref, watch } from 'vue';
 import { Editor } from '@/Editors/Editor';
-import { useAnnotationHistoryStore } from '@/stores/annotationHistoryStore';
 import { useAnnotationToolStore } from '@/stores/annotationToolStore';
 import { AnnotationTool } from '@/enums/annotationTool';
 import { FaceMeshEditor } from '@/Editors/FaceMeshEditor';
 import { BackgroundDrawer } from '@/Editors/BackgroundDrawer';
+import { PoseEditor } from '@/Editors/PoseEditor';
+import { HandEditor } from '@/Editors/HandEditor';
+import UserOverwriteModal from '@/components/Modals/UserOverwriteModal.vue';
 
-const annotationHistoryStore = useAnnotationHistoryStore();
-const annotationToolStore = useAnnotationToolStore();
+const tools = useAnnotationToolStore();
 
 const editors = ref<Editor[]>([new BackgroundDrawer()]);
 const canvas = ref<HTMLCanvasElement>();
+let oldTools = new Set<AnnotationTool>([...tools.tools]);
 
 onUnmounted(() => {
   // Cleanup - remove the event listener when component is unmounted
@@ -22,38 +24,51 @@ onMounted(() => {
   window.addEventListener('resize', onResize);
   if (!canvas.value) return;
   Editor.setCanvas(canvas.value);
-  annotationToolStore.tools.forEach((tool) => {
+  tools.tools.forEach((tool) => {
     editors.value.push(fromTool(tool));
   });
   Editor.draw();
 });
 
 watch(
-  () => annotationToolStore.tools,
-  (value, oldValue) => {
-    const added = new Set([...value].filter((tool) => !oldValue.has(tool)));
-    const removed = new Set([...oldValue].filter((tool) => !value.has(tool)));
+  () => tools.tools,
+  async (value) => {
+    const added = new Set([...value].filter((tool) => !oldTools.has(tool)));
+    const removed = new Set([...oldTools].filter((tool) => !value.has(tool)));
 
     editors.value.forEach((editor) => {
       if (!removed.has(editor.tool)) return;
-      Editor.remove(editor);
+      Editor.remove(editor.tool);
     });
     editors.value = editors.value.filter((editor) => !removed.has(editor.tool));
-    added.forEach((tool) => {
-      editors.value.push(fromTool(tool));
-    });
-    Editor.draw();
+    await Promise.all(
+      Array.from(added).map(async (tool) => {
+        editors.value.push(fromTool(tool));
+
+        const histories = tools.histories.allHistories;
+        histories.forEach((h) => {
+          if (!h.isEmpty(tool)) {
+            return;
+          }
+          tools.histories.runDetectionForTool(h, tool);
+        });
+      })
+    );
     editors.value.forEach((editor) => {
       editor.onBackgroundLoaded();
     });
+    Editor.draw();
+    oldTools = new Set<AnnotationTool>([...value]);
   },
   { deep: true }
 );
 
 watch(
-  () => annotationHistoryStore.selectedHistory,
+  () => tools.selectedHistory,
   async (value) => {
-    if (!value) return;
+    if (!value) {
+      throw new Error('Failed to get selected History');
+    }
     await Editor.setBackgroundSource(value.file);
     Editor.center();
     Editor.draw();
@@ -67,6 +82,10 @@ function fromTool(tool: AnnotationTool): Editor {
   switch (tool) {
     case AnnotationTool.FaceMesh:
       return new FaceMeshEditor();
+    case AnnotationTool.Pose:
+      return new PoseEditor();
+    case AnnotationTool.Hand:
+      return new HandEditor();
     default:
       throw Error('unknown tool: ' + tool);
   }
@@ -82,8 +101,10 @@ function handleMouseMove(event: MouseEvent): void {
   if (!canvas.value) return;
   Editor.prevMouseX = Editor.mouseX;
   Editor.prevMouseY = Editor.mouseY;
-  const canvasPosLeft = canvas.value.offsetLeft;
-  const canvasPosTop = canvas.value.offsetTop;
+  const canvasPos = $('#canvas').offset();
+  if (!canvasPos) return;
+  const canvasPosLeft = canvasPos.left;
+  const canvasPosTop = canvasPos.top;
   Editor.mouseX = event.clientX - canvasPosLeft;
   Editor.mouseY = event.clientY - canvasPosTop;
   const relativeMouseX = (Editor.mouseX - Editor.offsetX) / Editor.zoomScale;
@@ -138,18 +159,17 @@ const onResize = () => {
 </script>
 
 <template>
-  <div class="w-70 border" id="canvas-div">
+  <div id="canvas-div" class="d-flex flex-grow-1 flex-shrink-1 border border-5 position-relative">
+    <UserOverwriteModal class="position-absolute top-0 start-0 w-100 h-100" style="z-index: 10" />
     <canvas
       id="canvas"
       ref="canvas"
-      class=""
+      class="position-relative"
       @mousedown="handleMouseDown"
       @mousemove="handleMouseMove"
+      @mouseout="handleMouseUp"
       @mouseup="handleMouseUp"
       @wheel="handleWheel"
-      @mouseout="handleMouseUp"
     />
   </div>
 </template>
-
-<style scoped></style>

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import { ref, watch } from 'vue';
 import { AnnotationTool } from '@/enums/annotationTool';
 import { useAnnotationToolStore } from '@/stores/annotationToolStore';
@@ -7,7 +7,7 @@ const props = defineProps<{
   modelValue: boolean;
 }>();
 const emits = defineEmits<(e: 'update:modelValue', value: boolean) => void>();
-const toolsStore = useAnnotationToolStore();
+const tools = useAnnotationToolStore();
 
 const { modelValue } = props;
 const localOpen = ref(modelValue);
@@ -16,7 +16,17 @@ const toolsDesc = [
   {
     Tool: AnnotationTool.FaceMesh,
     Description: 'Annotates a face with landmarks',
-    Active: toolsStore.tools.has(AnnotationTool.FaceMesh)
+    Active: tools.tools.has(AnnotationTool.FaceMesh)
+  },
+  {
+    Tool: AnnotationTool.Pose,
+    Description: 'Annotates the whole body with landmarks',
+    Active: tools.tools.has(AnnotationTool.Pose)
+  },
+  {
+    Tool: AnnotationTool.Hand,
+    Description: 'Annotates a hand with landmarks',
+    Active: tools.tools.has(AnnotationTool.Hand)
   }
 ];
 
@@ -29,9 +39,9 @@ function closeModal() {
 function onOkModal() {
   toolsDesc.forEach((tool) => {
     if (tool.Active) {
-      toolsStore.tools.add(tool.Tool);
+      tools.getTools.add(tool.Tool);
     } else {
-      toolsStore.tools.delete(tool.Tool);
+      tools.getTools.delete(tool.Tool);
     }
   });
   closeModal();
@@ -39,7 +49,7 @@ function onOkModal() {
 
 function updateTools() {
   toolsDesc.forEach((tool) => {
-    tool.Active = toolsStore.tools.has(tool.Tool);
+    tool.Active = tools.tools.has(tool.Tool);
   });
 }
 
@@ -65,7 +75,7 @@ watch(localOpen, (newValue) => {
           </h3>
         </div>
         <div>
-          <BFormCheckbox :id="tool.Tool" size="lg" :switch="true" v-model="tool.Active" />
+          <BFormCheckbox :id="tool.Tool" v-model="tool.Active" :switch="true" size="lg" />
         </div>
       </div>
       {{ tool.Description }}

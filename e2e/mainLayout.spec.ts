@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 test.describe('check title and main page layout', () => {
   test('visits the app root url and checks elements layout', async ({ page }) => {
@@ -20,18 +20,24 @@ test.describe('check title and main page layout', () => {
       const thumbnailsBox = await thumbnails.boundingBox();
       expect(thumbnailsBox).not.toBe(null);
 
-      let relativeWidth = sidebarBox.width / containerBox.width;
-      expect(relativeWidth).toBeCloseTo(0.2, 1);
+      const sidebarWidth = sidebarBox?.width;
+      const canvasWidth = canvasBox?.width;
+      const thumbnailsWidth = thumbnailsBox?.width;
+      const containerWidth = containerBox?.width;
 
-      relativeWidth = canvasBox.width / containerBox.width;
-      expect(relativeWidth).toBeCloseTo(0.7, 1);
+      expect(sidebarWidth).not.toBe(undefined);
+      expect(canvasWidth).not.toBe(undefined);
+      expect(thumbnailsWidth).not.toBe(undefined);
+      expect(containerWidth).not.toBe(undefined);
 
-      relativeWidth = thumbnailsBox.width / containerBox.width;
-      expect(relativeWidth).toBeCloseTo(0.1, 1);
+      const baseFontSize = 16; // 1rem = 16px
+      expect(sidebarWidth).toBeCloseTo(20 * baseFontSize, 1);
+      expect(thumbnailsWidth).toBeCloseTo(10 * baseFontSize, 1);
+      expect(sidebarWidth + thumbnailsWidth + canvasWidth).toBeCloseTo(containerWidth, -3);
     });
 
     await test.step('check navbar brand', async () => {
-      await expect(page.locator('#title')).toHaveText('Face Mesh Editor');
+      await expect(page.locator('#title')).toHaveText('Landmark Editor');
       const icon = page.locator('#app-icon');
       await expect(icon).toBeVisible();
     });

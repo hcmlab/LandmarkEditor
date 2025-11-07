@@ -1,6 +1,7 @@
 /** Specifies the models in the API */
 
 export enum ModelType {
-  mediapipe,
-  custom
+  mediapipeFaceMesh = 0,
+  custom = 1,
+  other = -1
 }
